@@ -1,6 +1,6 @@
 package rush.model;
 
-public enum OrderStatus {
+public enum OrderStatus{
     PLACED,
     IN_PREPARATION,
     READY,
