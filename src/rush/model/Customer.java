@@ -102,4 +102,7 @@ public abstract class Customer {
     public Order getOrder() { return order; }
     public int getServedTurn() { return servedTurn; }
     public int getReadyToPayTurn() { return readyToPayTurn; }
+    public String getName() {
+        return "C" + id;
+    }
 }
