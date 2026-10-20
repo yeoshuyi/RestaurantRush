@@ -18,7 +18,7 @@ public class Waiter extends Staff {
         if (c.getState() != CustomerState.WAITING) {
             return ActionResult.fail(c.getName() + " is not waiting in the queue.");
         }
-        if (table.isEmpty()) {
+        if (table.isEmpty() || !table.get().isFree()) {
             return ActionResult.fail("No free table.");
         }
         Table t = table.get();
