@@ -38,6 +38,10 @@ public abstract class Customer {
         return state == CustomerState.WAITING || state == CustomerState.SEATED || state == CustomerState.ORDERED;
     }
 
+    public boolean isPresent() {
+        return state != CustomerState.PAID && state != CustomerState.LEFT;
+    }
+
     public void loseSatisfaction() {
         if (isWaitingForService()) {
             satisfaction = Math.max(0, satisfaction - waitPenalty());
