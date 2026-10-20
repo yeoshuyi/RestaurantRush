@@ -83,6 +83,9 @@ public abstract class Customer {
 
     void pay() {
         this.state = CustomerState.PAID;
+        if (order != null) {
+            order.markPaid();
+        }
         if (table != null) {
             table.release();
         }
