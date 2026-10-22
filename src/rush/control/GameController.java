@@ -106,8 +106,7 @@ public class GameController {
         if (selected.isEmpty()) {
             return Optional.empty();
         }
-        return Optional.of(restaurant.getWaiter().seat(
-                selected.get(), restaurant.getQueue(), restaurant.freeTable()));
+            return Optional.of(restaurant.getWaiter().seat(selected.get(), restaurant));
     }
 
     private Optional<ActionResult> takeCustomerOrder() {
@@ -120,7 +119,7 @@ public class GameController {
         if (selected.isEmpty()) {
             return Optional.empty();
         }
-        return Optional.of(restaurant.getWaiter().takeOrder(selected.get(), restaurant.getMenu()));
+        return Optional.of(restaurant.getWaiter().takeOrder(selected.get(), restaurant));
     }
 
     private Optional<ActionResult> serveOrder() {
