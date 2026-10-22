@@ -7,19 +7,17 @@ public class Chef extends Staff {
     }
 
     public ActionResult prepare(Order o, int turn) {
-        if (!canAct()) {
-            return busy();
-        }
-        if (!o.isInKitchen()) {
-            return ActionResult.fail("Order " + o.describe() + " needs no more preparation (status "
-                    + o.getStatus() + ").");
-        }
-        o.advance(turn);
-        markActed();
-        String progress = o.getUnitsDone() + "/" + o.getItem().getPrepUnits();
-        if (o.isReady()) {
-            return ActionResult.ok("Chef prepares " + o.describe() + " (" + progress + "): READY.");
-        }
-        return ActionResult.ok("Chef prepares " + o.describe() + " (" + progress + ").");
+        return perform(() -> {
+            if (!o.isInKitchen()) {
+                return ActionResult.fail("Order " + o.describe() + " needs no more preparation (status "
+                        + o.getStatus() + ").");
+            }
+            o.advance(turn);
+            String progress = o.getUnitsDone() + "/" + o.getItem().getPrepUnits();
+            if (o.isReady()) {
+                return ActionResult.ok("Chef prepares " + o.describe() + " (" + progress + "): READY.");
+            }
+            return ActionResult.ok("Chef prepares " + o.describe() + " (" + progress + ").");
+        });
     }
 }
