@@ -61,8 +61,23 @@ public class GameController {
     }
 
     private void waiterChoice() {
-        WaiterTask task = view.chooseWaiterTask(List.of(WaiterTask.values()));
-        performWaiterTask(task).ifPresent(this::showActionResult);
+        while (restaurant.getWaiter().canAct()) {
+            WaiterTask task = view.chooseWaiterTask(List.of(WaiterTask.values()));
+            if (task == WaiterTask.WAIT) {
+                view.showMessage("The waiter takes no action this turn.");
+                break;
+            }
+
+            Optional<ActionResult> result = performWaiterTask(task);
+            if (result.isPresent()) {
+                showActionResult(result.get());
+                if (result.get().isOk()) {
+                    break; // Action succeeded and consumed the task
+                }
+                // If result was fail (not ok), loop continues so manager can re-choose waiter task
+            }
+            // If result was Optional.empty() (user chose 0/Back or list empty), loop continues!
+        }
     }
 
     private Optional<ActionResult> performWaiterTask(WaiterTask task) {
