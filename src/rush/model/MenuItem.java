@@ -1,7 +1,7 @@
 package rush.model;
 
-/** Immutable menu items */
-public final class MenuItem {
+//A menu item. Subclasses may derive price and prep units from other items.
+public class MenuItem {
 
     private final String name;
     private final int priceCents;

@@ -31,6 +31,7 @@ public abstract class Customer {
 
     public MenuItem chooseItem(Menu m) {
         // Deterministic rule for food item choice
+        // NOTE: Adding or reordering menu items changes which item each customer picks.
         return m.get((id - 1) % m.size());
     }
 
