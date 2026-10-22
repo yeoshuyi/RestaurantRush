@@ -27,6 +27,7 @@ Types include:
 * feature - New feature
 * fix - Fix
 * chore - Documentation
+* refactor - Restructuring with no behaviour change
 
 ### Stage Tagging and Release
 ```bash

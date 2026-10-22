@@ -10,49 +10,38 @@ public class Waiter extends Staff {
     }
 
     public ActionResult seat(Customer c, Restaurant r) {
-        if (!canAct()) {
-            return busy();
-        }
         //seating is done by calling Restaurant object's seat method
-        //Waiter should not need to hold references to Table and Waiting Queue
-        ActionResult result = r.seat(c, getName());
-        if (result.isOk()) {
-            markActed();
-        }
-        return result;
+        //Waiter should not hold references to Table and Waiting Queue
+        return perform(() -> r.seat(c, getName()));
     }
 
-    //ordering method passes in Restaurant object
+    //takeOrder method passes in Restaurant object
     public ActionResult takeOrder(Customer c, Restaurant r) {
-        if (!canAct()) {
-            return busy();
-        }
-        if (c.getState() != CustomerState.SEATED) {
-            return ActionResult.fail(c.getName() + " is not seated and waiting to order.");
-        }
-        MenuItem item = c.chooseItem(r.getMenu());
-        Order order = new Order(nextOrderId++, c, item, r.quoteBill(c, item));
-        c.placeOrder(order);
-        markActed();
-        return ActionResult.ok("Waiter takes order " + order.describe() + " ("
-                + Money.format(order.getBillCents()) + ", " + item.getPrepUnits() + " prep unit"
-                + (item.getPrepUnits() == 1 ? "" : "s") + ").");
+        return perform(() -> {
+            if (c.getState() != CustomerState.SEATED) {
+                return ActionResult.fail(c.getName() + " is not seated and waiting to order.");
+            }
+            MenuItem item = c.chooseItem(r.getMenu());
+            Order order = new Order(nextOrderId++, c, item, r.quoteBill(c, item));
+            c.placeOrder(order);
+            return ActionResult.ok("Waiter takes order " + order.describe() + " ("
+                    + Money.format(order.getBillCents()) + ", " + item.getPrepUnits() + " prep unit"
+                    + (item.getPrepUnits() == 1 ? "" : "s") + ").");
+        });
     }
 
     public ActionResult serve(Order o, int turn) {
-        if (!canAct()) {
-            return busy();
-        }
-        if (!o.isReady()) {
-            return ActionResult.fail("Order " + o.describe() + " is not READY (status " + o.getStatus()
-                    + ", " + o.getUnitsDone() + "/" + o.getItem().getPrepUnits() + " units done).");
-        }
-        if (o.getReadyTurn() >= turn) {
-            return ActionResult.fail("Order " + o.describe() + " only became ready this turn. Serve next turn.");
-        }
-        o.markServed();
-        o.getCustomer().onServed(turn);
-        markActed();
-        return ActionResult.ok("Waiter serves " + o.describe() + ".");
+        return perform(() -> {
+            if (!o.isReady()) {
+                return ActionResult.fail("Order " + o.describe() + " is not READY (status " + o.getStatus()
+                        + ", " + o.getUnitsDone() + "/" + o.getItem().getPrepUnits() + " units done).");
+            }
+            if (o.getReadyTurn() >= turn) {
+                return ActionResult.fail("Order " + o.describe() + " only became ready this turn. Serve next turn.");
+            }
+            o.markServed();
+            o.getCustomer().onServed(turn);
+            return ActionResult.ok("Waiter serves " + o.describe() + ".");
+        });
     }
 }
