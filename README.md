@@ -1,16 +1,24 @@
-# RestaurantRush
+# Restaurant Rush
 
-```
+A turn-based command-line restaurant simulation game built in Java following the Model-View-Controller (MVC) architecture.
+
+* **Repository:** [https://github.com/yeoshuyi/RestaurantRush](https://github.com/yeoshuyi/RestaurantRush)
+* **Release:** Stage 1 (`stage-1`)
+
+---
+
+## 1. Directory Structure
+
+```text
 RestaurantRush/
-├── README.md
-├── CONTRIBUTING.md     # Instructions for Contributions
-├── run.sh              # Run file for Unix
-├── run.bat             # Run file for Windows
+├── README.md           # Project documentation and instructions
+├── CONTRIBUTING.md     # Guidelines for team contributions
+├── run.sh              # Build and execution script (macOS/Linux)
+├── run.bat             # Build and execution script (Windows)
 ├── src/
 │   └── rush/
-│       ├── Main.java   # Entry point
-│       ├── ui/         # Console input/output
-│       ├── game/       # Turn loop and scoring
-│       └── model/      # Restaurant objects
-└── docs/
-```
+│       ├── Main.java   # Application entry point
+│       ├── ui/         # Console input, display formatting, and view bridge
+│       ├── game/       # Game controller, turn loop, config, and statistics
+│       └── model/      # Core entities (Restaurant, Customer, Staff, Order, Table)
+└── docs/               # System architecture and UML design diagrams
