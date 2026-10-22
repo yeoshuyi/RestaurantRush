@@ -21,6 +21,10 @@ RestaurantRush/
 │       ├── ui/         # Console input, display formatting, and view bridge
 │       ├── control/    # Game controller, turn loop, config, and statistics
 │       └── model/      # Core entities (Restaurant, Customer, Staff, Order, Table)
+├── tests/
+│   └── stage1/
+│       ├── victory.txt # script verifying victory condition
+│       └── defeat.txt  # script verifying defeat condition
 └── docs/               # System architecture and UML design diagrams
 ```
 
