@@ -1,22 +1,4 @@
-# Turn 1 to 18: Manager continuously takes no action (Wait)
-0
-0
-0
-0
-0
-0
-0
-0
-0
-0
-0
-0
-0
-0
-0
-0
-0
-0
+# Turns 1 to 18: Waiter waits every turn (Chef has no orders so no prompt)
 0
 0
 0
