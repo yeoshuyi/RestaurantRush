@@ -42,6 +42,11 @@ public class Restaurant {
         return tables.stream().filter(Table::isFree).findFirst();
     }
 
+    /** Customer-specific pricing is calculated inside Restaurant class, not in Waiter class. */
+    public int quoteBill(Customer c, MenuItem item) {
+        return c.computeBill(item.getPriceCents());
+    }
+
     /** Seated customers who have not ordered yet */
     public List<Customer> awaitingOrder() {
         return customersIn(CustomerState.SEATED);
