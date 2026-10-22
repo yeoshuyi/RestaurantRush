@@ -19,7 +19,7 @@ RestaurantRush/
 │   └── rush/
 │       ├── Main.java   # Application entry point
 │       ├── ui/         # Console input, display formatting, and view bridge
-│       ├── game/       # Game controller, turn loop, config, and statistics
+│       ├── control/       # Game controller, turn loop, config, and statistics
 │       └── model/      # Core entities (Restaurant, Customer, Staff, Order, Table)
 └── docs/               # System architecture and UML design diagrams
 ```
