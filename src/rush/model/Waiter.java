@@ -16,6 +16,7 @@ public class Waiter extends Staff {
     }
 
     //takeOrder method passes in Restaurant object
+    //takeOrder needs quoteBill() to store the associated price of Order
     public ActionResult takeOrder(Customer c, Restaurant r) {
         return perform(() -> {
             if (c.getState() != CustomerState.SEATED) {
