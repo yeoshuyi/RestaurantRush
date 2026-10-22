@@ -47,6 +47,20 @@ public class Restaurant {
         return c.computeBill(item.getPriceCents());
     }
 
+    /** Seat a queued customer at the first free table. Package-private: only staff may seat. */
+    ActionResult seat(Customer c, String byWhom) {
+        if (c.getState() != CustomerState.WAITING) {
+            return ActionResult.fail(c.getName() + " is not waiting in the queue.");
+        }
+        Optional<Table> table = freeTable();
+        if (table.isEmpty()) {
+            return ActionResult.fail("No free table.");
+        }
+        queue.remove(c);
+        c.seatAt(table.get());
+        return ActionResult.ok(byWhom + " seats " + c.getName() + " at table " + table.get().getId() + ".");
+    }
+
     /** Seated customers who have not ordered yet */
     public List<Customer> awaitingOrder() {
         return customersIn(CustomerState.SEATED);
