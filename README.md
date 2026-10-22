@@ -22,3 +22,51 @@ RestaurantRush/
 │       ├── game/       # Game controller, turn loop, config, and statistics
 │       └── model/      # Core entities (Restaurant, Customer, Staff, Order, Table)
 └── docs/               # System architecture and UML design diagrams
+```
+
+---
+
+## 2. Build and Execution
+
+### Prerequisites
+* Java Development Kit (JDK 17 or higher recommended)
+
+### Quick Run (Using Scripts)
+
+* **macOS / Linux:**
+```bash
+chmod +x run.sh
+./run.sh
+```
+* **Windows:**
+```DOS
+run.bat
+```
+
+### Manual Compilation and Execution
+1. **Compile:**
+```Bash
+javac -d bin -sourcepath src src/rush/Main.java
+```
+2. **Run:**
+```Bash
+java -cp bin rush.Main
+```
+
+---
+## 3. Test Verification
+
+The application supports automated scripted playthroughs to verify deterministic customer choices, staff action validations, and game-ending states.
+
+### Replaying Test Transcripts
+
+Run the compiled application with an input script piped into standard input:
+
+* **Victory Scenario:**
+```bash
+java -cp bin rush.Main < tests/stage1/victory.txt
+```
+* **Defeat Scenario:**
+```bash
+java -cp bin rush.Main < tests/stage1/defeat.txt
+```
