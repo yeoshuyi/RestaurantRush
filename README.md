@@ -74,3 +74,15 @@ java -cp bin rush.Main < tests/stage1/victory.txt
 ```bash
 java -cp bin rush.Main < tests/stage1/defeat.txt
 ```
+### Functional Coverage Verification with Constrained-Random Vectors
+
+> The DV Script is written with heavy AI-assistance as an extra exploration outside of the project requirements. Please ignore it for grading.
+
+`dv/` contains a Python (3.9+, standard library only) verification environment. It drives the game through stdin/stdout with constrained-random and directed inputs, and checks every run against a reference model and against assertions. It also measures functional coverage of turns, arrivals, Waiter, Chef, the order lifecycle, satisfaction and abandonment, eating and payment, results, print format and input robustness. It runs in GitHub CI as the `dv` job.
+
+```bash
+python dv/dv.py regress            # directed + 200 random seeds, 100% coverage gate
+python -m unittest discover -s dv/tests -t dv
+```
+
+See [dv/README.md](dv/README.md) for details.
