@@ -25,3 +25,9 @@ replay_pid*
 
 #out
 out/
+
+# Python DV (dv/) build and results
+dv/build/
+dv/out/
+__pycache__/
+*.pyc
