@@ -1,10 +1,13 @@
-"""Stage 1 functional
+"""Stage 1 functional coverage (also sampled in later stages).
 
 Every ignore/illegal bin says why it is unreachable under the base setting.
+Facts that depend on who arrives when (who can abandon, on which turn, which
+items they order, cheapest bills) come from rrdv.facts, so the same groups
+stay correct when Stage 2 swaps arrivals for VIP / Critic customers.
 Facts used repeatedly:
-  * A Regular loses 8/turn from 100, so an unserved customer hits 0 at the end
-    of turn arrival+12. Only C1 (turn 1 -> 13) and C2 (turn 4 -> 16) can
-    abandon within 18 turns, and by the item rule they order Salad and Burger.
+  * An unserved customer hits 0 at the end of turn arrival + ceil(100/penalty) - 1.
+    Stage 1: only C1 (turn 13) and C2 (turn 16) abandon, ordering Salad / Burger.
+    Stage 2: C2 is a Critic (turn 12, Pasta) and C1 a Regular (turn 13, Salad).
   * There is one Waiter, so at most one customer is served per turn, which means at most one
     customer becomes READY_TO_PAY per turn and the Cashier never builds a queue.
   * The Waiter acts before the Chef, so a dish finished this turn is never in the
@@ -13,13 +16,28 @@ Facts used repeatedly:
 
 from __future__ import annotations
 
+from .. import facts
+from ..javaparse import format_money
 from ..monitor import LINE_PATTERNS, MSG_PATTERNS
+from ..spec import CUSTOMER_KINDS
 from ..stimulus import JUNK_CLASSES, VALID_VARIANTS
 from . import SampleCtx, covergroup
 
 PROMPT_LABELS = ("Choose Waiter task", "Choose customer", "Choose order", "Choose Chef task")
 ONE_WAITER = "single Waiter serves one customer per turn, so READY_TO_PAY never overlaps"
-ONLY_C1_C2 = "only C1/C2 can abandon (12 unserved turns) and they order 1-unit items"
+
+
+def _abandon_reason(spec) -> str:
+    who = ", ".join(f"{a.name} {a.kind.label} turn {facts.abandon_turn(spec, a)} ({a.item.name})"
+                    for a in facts.can_abandon(spec))
+    return f"only these customers can abandon within {spec.max_turns} turns: {who or 'none'}"
+
+
+def _penalty(label: str) -> int:
+    for k in CUSTOMER_KINDS.values():
+        if k.label == label:
+            return k.wait_penalty
+    raise KeyError(label)
 
 
 def _bucket(n: int, edges):
@@ -151,18 +169,25 @@ def order_lifecycle(db, spec):
     g = db.group("cg_order_lifecycle", "order states PLACED -> ... -> PAID/CANCELLED")
     finals = ["PAID", "CANCELLED_PLACED", "CANCELLED_IN_PREPARATION", "CANCELLED_READY", "OPEN"]
     ignore, illegal = {}, {}
+    why = _abandon_reason(spec)
+    abandoning = facts.abandoning_items(spec)
     for item in spec.menu:
         illegal[(item.name, "CANCELLED_SERVED")] = "served customers lose no satisfaction"
-        if item.prep_units == 1:
-            ignore[(item.name, "CANCELLED_IN_PREPARATION")] = "1-unit items skip IN_PREPARATION"
-        else:
+        if item.name not in abandoning:
             for f in ("CANCELLED_PLACED", "CANCELLED_IN_PREPARATION", "CANCELLED_READY"):
-                ignore[(item.name, f)] = ONLY_C1_C2
+                ignore[(item.name, f)] = why
+        elif item.prep_units == 1:
+            ignore[(item.name, "CANCELLED_IN_PREPARATION")] = "1-unit items skip IN_PREPARATION"
     cx = g.cross("item_x_final", [i.name for i in spec.menu], finals, ignore=ignore, illegal=illegal)
-    cp_tr = g.coverpoint("transition", [
-        "PLACED->IN_PREPARATION", "IN_PREPARATION->READY", "PLACED->READY", "READY->SERVED",
-        "SERVED->PAID", "PLACED->CANCELLED", "READY->CANCELLED"],
-        ignore={"IN_PREPARATION->CANCELLED": ONLY_C1_C2},
+    transitions = ["PLACED->IN_PREPARATION", "IN_PREPARATION->READY", "PLACED->READY", "READY->SERVED",
+                   "SERVED->PAID", "PLACED->CANCELLED", "READY->CANCELLED"]
+    tr_ignore = {}
+    if facts.multi_unit_cancel_possible(spec):
+        transitions.append("IN_PREPARATION->CANCELLED")
+    else:
+        tr_ignore["IN_PREPARATION->CANCELLED"] = why
+    cp_tr = g.coverpoint("transition", transitions,
+        ignore=tr_ignore,
         illegal={"SERVED->CANCELLED": "served customers lose no satisfaction",
                  "PLACED->SERVED": "must be READY first", "IN_PREPARATION->SERVED": "must be READY first",
                  "PLACED->PAID": "must be served first", "READY->PAID": "must be served first"})
@@ -188,19 +213,21 @@ def order_lifecycle(db, spec):
 @covergroup(stage=1)
 def satisfaction(db, spec):
     g = db.group("cg_satisfaction", "satisfaction decay and abandonment")
+    # Regular customers only; other kinds have their own bins in stage2.py.
     cp_pay = g.coverpoint("sat_at_payment", ["84", "76-83", "60-75", "1-59"], ignore={
-        "85-100": "loses 8 on arrival turn and on order turn before it can be served"})
+        "85-100": "a Regular loses 8 on arrival turn and on order turn before it can be served"})
     cp_from = g.coverpoint("abandon_from", ["WAITING", "SEATED", "ORDERED"],
                            illegal={"SERVED": "served customers lose nothing",
                                     "READY_TO_PAY": "served customers lose nothing"})
-    cp_turn = g.coverpoint("abandon_turn", ["13", "16"])  # anything else is undeclared -> violation
-    cp_dep = g.coverpoint("departures_per_game", ["0", "1", "2"])
+    # Anything outside the derived turns is undeclared -> violation.
+    cp_turn = g.coverpoint("abandon_turn", [str(t) for t in facts.abandon_turns(spec)])
+    cp_dep = g.coverpoint("departures_per_game", [str(i) for i in range(len(facts.can_abandon(spec)) + 1)])
     cp_last = g.coverpoint("last_chance", ["left", "rescued"],
                            desc="customer at <= penalty satisfaction either leaves or is served that turn")
 
     def sample(ctx: SampleCtx):
         for h in ctx.tl.customers.values():
-            if h.paid_turn > 0:
+            if h.paid_turn > 0 and h.ctype == "Regular":
                 s = h.sats.get(h.paid_turn, -1)
                 cp_pay.sample(_bucket(s, [("1-59", 1, 59), ("60-75", 60, 75), ("76-83", 76, 83),
                                           ("84", 84, 84), ("85-100", 85, 100)]))
@@ -213,7 +240,7 @@ def satisfaction(db, spec):
             if t.snapshot is None or t.end is None:
                 continue
             for tv in t.snapshot.tables:
-                if tv.customer and tv.state in ("SEATED", "ORDERED") and tv.sat <= 8:
+                if tv.customer and tv.state in ("SEATED", "ORDERED") and tv.sat <= _penalty(tv.ctype):
                     h = ctx.tl.customers[tv.customer]
                     cp_last.sample("rescued" if h.served_turn == t.turn else "left")
     return sample
@@ -269,10 +296,14 @@ def result(db, spec):
     cp_paid = g.coverpoint("paid", [str(i) for i in range(0, 6)])
     cp_rev = g.coverpoint("revenue", ["$0", "<$45", "$45-$59.99", ">=$60"])
     cp_avg = g.coverpoint("avg_satisfaction", ["N/A", "<60", "60.0", "60.1-69.9", "70+"])
-    cx = g.cross("targets_paid_rev_sat", ["met", "MISSED"], ["met", "MISSED"], ["met", "MISSED"], ignore={
-        ("met", "MISSED", "met"): "4 cheapest payable bills = $48 >= $45",
-        ("met", "MISSED", "MISSED"): "4 cheapest payable bills = $48 >= $45",
-    })
+    cheapest = facts.cheapest_bills(spec, spec.target_paid)
+    rev_ignore = {}
+    if cheapest >= spec.target_revenue_cents:
+        why = (f"{spec.target_paid} cheapest payable bills = {format_money(cheapest)} >= "
+               f"{format_money(spec.target_revenue_cents)}")
+        rev_ignore = {("met", "MISSED", "met"): why, ("met", "MISSED", "MISSED"): why}
+    cx = g.cross("targets_paid_rev_sat", ["met", "MISSED"], ["met", "MISSED"], ["met", "MISSED"],
+                 ignore=rev_ignore)
     cp_eof = g.coverpoint("ended_by", ["result", "input_ended"])
 
     def sample(ctx: SampleCtx):
