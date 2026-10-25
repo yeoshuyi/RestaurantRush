@@ -4,6 +4,8 @@ import java.util.function.BiFunction;
 
 public enum CustomerType {
     REGULAR("Regular", RegularCustomer::new);
+    VIP("VIP", VIPCustomer::new), /** Added VIP and CRITIC as new customer types */
+    CRITIC("Critic", CriticCustomer::new);
 
     private final String label;
     private final BiFunction<Integer, Integer, Customer> constructor;
