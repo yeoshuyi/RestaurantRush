@@ -74,7 +74,7 @@ public class InputReader {
                 
                 line = line.trim();
                 if (line.isEmpty() || line.startsWith("#")) {
-                    out.print(prompt);
+                    //out.print(prompt);
                     out.flush();
                     continue;
                 }
