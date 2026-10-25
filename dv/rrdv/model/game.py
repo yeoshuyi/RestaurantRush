@@ -115,8 +115,9 @@ class GameModel:
         self._req_id += 1
         prompt = f"{label} [{lo}-{hi}]: "
         attempt = 0
+        need_prompt = True
         while True:
-            self.out.print(prompt)
+            if need_prompt: self.out.print(prompt)
             line = self.source.next_line(
                 InputRequest(self._req_id, kind, label, lo, hi, options, attempt, self))
             attempt += 1
@@ -126,7 +127,10 @@ class GameModel:
             self.consumed.append(line)
             t = java_trim(line)
             if t == "" or t.startswith("#"):
+                need_prompt = False
                 continue
+            else:
+                need_prompt = True
             try:
                 v = java_parse_int(t)
             except ValueError:
