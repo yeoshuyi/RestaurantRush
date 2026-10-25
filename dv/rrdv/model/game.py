@@ -117,7 +117,10 @@ class GameModel:
         attempt = 0
         need_prompt = True
         while True:
-            if need_prompt: self.out.print(prompt)
+            # Blank and '#' lines are skipped without re-printing the prompt.
+            if need_prompt:
+                self.out.print(prompt)
+            need_prompt = True
             line = self.source.next_line(
                 InputRequest(self._req_id, kind, label, lo, hi, options, attempt, self))
             attempt += 1
@@ -129,8 +132,6 @@ class GameModel:
             if t == "" or t.startswith("#"):
                 need_prompt = False
                 continue
-            else:
-                need_prompt = True
             try:
                 v = java_parse_int(t)
             except ValueError:
@@ -275,7 +276,7 @@ class GameModel:
         c = self.choose_customer("take", "Choose a customer to take an order from", awaiting)
         if c is None:
             return False
-        item = self.spec.menu[c.kind.choose_item(c.id, len(self.spec.menu))]
+        item = self.spec.menu[c.kind.choose_item(c.id, self.spec.menu)]
         od = Order(self.r.next_order_id, c, item, c.kind.bill(item.price_cents))
         self.r.next_order_id += 1
         c.order = od

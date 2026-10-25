@@ -15,7 +15,7 @@ from ..monitor import Transcript
 from ..spec import StageSpec
 from ..timeline import Timeline
 
-_MODULES = ("stage1",)
+_MODULES = ("stage1", "stage2")
 
 Builder = Callable[[CoverageDB, StageSpec], Callable[["SampleCtx"], None]]
 _REGISTRY: List[Tuple[int, Builder]] = []

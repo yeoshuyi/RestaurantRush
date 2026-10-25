@@ -262,7 +262,7 @@ def a_order_choice(ctx: Ctx) -> List[str]:
         if not h.item:
             continue
         kind = _kind_by_label(h.ctype) or ctx.spec.kind_for(h.arrival_turn)
-        exp = ctx.spec.menu[kind.choose_item(_cid(h.name), len(ctx.spec.menu))]
+        exp = ctx.spec.menu[kind.choose_item(_cid(h.name), ctx.spec.menu)]
         if h.item != exp.name:
             e.append(f"{h.name} ordered {h.item}, rule says {exp.name}")
     for o in ctx.tl.orders.values():

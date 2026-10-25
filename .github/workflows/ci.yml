@@ -54,8 +54,8 @@ jobs:
           python-version: ${{ matrix.python }}
       - name: DV self-tests
         run: python -m unittest discover -s dv/tests -t dv -v
-      - name: DV regression (stage 1)
-        run: python dv/dv.py regress --stage 1 --seeds ${{ env.DV_SEEDS }} --seed-base ${{ env.DV_SEED_BASE }} --min-cov 100 --out dv/out
+      - name: DV regression (stage 2)
+        run: python dv/dv.py regress --stage 2 --seeds ${{ env.DV_SEEDS }} --seed-base ${{ env.DV_SEED_BASE }} --min-cov 100 --out dv/out
       - name: Upload DV results
         if: always()
         uses: actions/upload-artifact@v4

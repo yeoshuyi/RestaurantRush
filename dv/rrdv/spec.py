@@ -8,7 +8,7 @@ customer kinds / menu items / settings instead of editing the checkers.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Callable, Dict, Tuple
+from typing import Callable, Dict, Sequence, Tuple
 
 
 @dataclass(frozen=True)
@@ -18,18 +18,42 @@ class MenuItemSpec:
     prep_units: int
 
 
+def position_rule(cid: int, menu: Sequence[MenuItemSpec]) -> int:
+    """Customer.chooseItem(): customer N orders item (N - 1) mod menu size."""
+    return (cid - 1) % len(menu)
+
+
+def most_demanding(cid: int, menu: Sequence[MenuItemSpec]) -> int:
+    """CriticCustomer.chooseItem(): most prep units, ties broken by higher price.
+
+    Java's Stream.max keeps the first of equal maxima, so a later item must be
+    strictly greater to win.
+    """
+    best = 0
+    for i, item in enumerate(menu):
+        b = menu[best]
+        if (item.prep_units, item.price_cents) > (b.prep_units, b.price_cents):
+            best = i
+    return best
+
+
+def vip_bill(base_cents: int) -> int:
+    """VIPCustomer.computeBill(): 90% rounded half up to the nearest cent."""
+    return (base_cents * 90 + 50) // 100
+
+
 @dataclass(frozen=True)
 class CustomerKind:
-    """Per-type behaviour (brief 4.2 table). Stage 2 adds VIP/Critic here."""
+    """Per-type behaviour (brief 4.2 table)."""
 
     key: str
     label: str
     wait_penalty: int
     bill: Callable[[int], int] = lambda base: base
     # Index into the menu for customer number `cid` (1-based). The brief only
-    # requires a documented deterministic rule; this one is the Java rule
-    # documented in Customer.chooseItem().
-    choose_item: Callable[[int, int], int] = lambda cid, menu_size: (cid - 1) % menu_size
+    # requires a documented deterministic rule; these mirror the Java overrides
+    # of Customer.chooseItem().
+    choose_item: Callable[[int, Sequence[MenuItemSpec]], int] = position_rule
 
 
 CUSTOMER_KINDS: Dict[str, CustomerKind] = {}
@@ -41,6 +65,9 @@ def register_kind(kind: CustomerKind) -> CustomerKind:
 
 
 REGULAR = register_kind(CustomerKind("REGULAR", "Regular", 8))
+# Stage 2 (brief 4.2)
+VIP = register_kind(CustomerKind("VIP", "VIP", 5, bill=vip_bill))
+CRITIC = register_kind(CustomerKind("CRITIC", "Critic", 12, choose_item=most_demanding))
 
 
 @dataclass(frozen=True)
@@ -90,7 +117,20 @@ STAGE1 = StageSpec(
     features=("regular", "waiter", "chef", "cashier"),
 )
 
-STAGES: Dict[int, StageSpec] = {1: STAGE1}
+# Stage 2 base setting: the turn-4 arrival is a Critic, the turn-7 arrival a VIP.
+STAGE2 = StageSpec(
+    stage=2,
+    max_turns=18,
+    tables=2,
+    arrivals={1: "REGULAR", 4: "CRITIC", 7: "VIP", 10: "REGULAR", 13: "REGULAR", 16: "REGULAR"},
+    menu=STANDARD_MENU,
+    target_paid=4,
+    target_revenue_cents=4500,
+    target_avg_satisfaction=60,
+    features=("regular", "waiter", "chef", "cashier", "vip", "critic"),
+)
+
+STAGES: Dict[int, StageSpec] = {1: STAGE1, 2: STAGE2}
 
 
 def get_stage(n: int) -> StageSpec:
