@@ -2,9 +2,10 @@ package rush.model;
 
 import java.util.function.BiFunction;
 
+/** Added VIP and CRITIC as new customer types */
 public enum CustomerType {
     REGULAR("Regular", RegularCustomer::new);
-    VIP("VIP", VIPCustomer::new), /** Added VIP and CRITIC as new customer types */
+    VIP("VIP", VIPCustomer::new), 
     CRITIC("Critic", CriticCustomer::new);
 
     private final String label;
