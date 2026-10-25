@@ -1,7 +1,6 @@
 # Turn 1: Waiter seats C1 (1, 1); Chef waits (0)
 1
 1
-0
 # Turn 2: Waiter takes C1 order (2, 1); Chef preps Salad (1)
 2
 1
@@ -9,11 +8,9 @@
 # Turn 3: Waiter serves C1 (3, 1); Chef waits (0)
 3
 1
-0
 # Turn 4: Waiter seats C2 (1, 1); Chef waits (0)
 1
 1
-0
 # Turn 5: Waiter takes C2 order (2, 1); Chef preps Burger (1) [C1 pays $9]
 2
 1
@@ -21,11 +18,9 @@
 # Turn 6: Waiter serves C2 (3, 1); Chef waits (0)
 3
 1
-0
 # Turn 7: Waiter seats C3 (1, 1); Chef waits (0)
 1
 1
-0
 # Turn 8: Waiter takes C3 order (2, 1); Chef preps Pasta unit 1 (1) [C2 pays $15]
 2
 1
@@ -36,11 +31,9 @@
 # Turn 10: Waiter serves C3 (3, 1); Chef waits (0)
 3
 1
-0
 # Turn 11: Waiter seats C4 (1, 1); Chef waits (0)
 1
 1
-0
 # Turn 12: Waiter takes C4 order (2, 1); Chef preps Salad (1) [C3 pays $18]
 2
 1
@@ -48,7 +41,6 @@
 # Turn 13: Waiter serves C4 (3, 1); Chef waits (0)
 3
 1
-0
 # Turn 14: Waiter waits (0); Chef waits (0)
 0
 0
