@@ -3,7 +3,9 @@
 A turn-based command-line restaurant simulation game built in Java following the Model-View-Controller (MVC) architecture.
 
 * **Repository:** [https://github.com/yeoshuyi/RestaurantRush](https://github.com/yeoshuyi/RestaurantRush)
-* **Release:** Stage 1 (`stage-1`)
+* **Release:** Stage 2 (`stage-2`)
+
+> Stage 2 WIP
 
 ---
 
