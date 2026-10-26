@@ -1,0 +1,22 @@
+# Stage 2 defeat: Waiter waits every turn (Chef has no orders so no prompt).
+# C2 (Critic, -12/turn) leaves at the end of turn 12, C1 (Regular, -8/turn) at turn 13.
+# C3 (VIP, -5/turn) never leaves: still waiting at the end.
+# Turns 1 to 18:
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
