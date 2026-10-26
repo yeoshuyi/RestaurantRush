@@ -4,7 +4,7 @@ import java.util.function.BiFunction;
 
 /** Added VIP and CRITIC as new customer types */
 public enum CustomerType {
-    REGULAR("Regular", RegularCustomer::new);
+    REGULAR("Regular", RegularCustomer::new),
     VIP("VIP", VIPCustomer::new), 
     CRITIC("Critic", CriticCustomer::new);
 
