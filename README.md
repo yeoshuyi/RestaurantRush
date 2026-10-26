@@ -93,7 +93,7 @@ See [dv/README.md](dv/README.md) for details.
 
 ### Stage 1 → Stage 2 (Customer behaviour extension)
 
-**Compare link:** https://github.com/yeoshuyi/RestaurantRush/compare/stage-1...stage-2
+**Compare link:** https://github.com/yeoshuyi/RestaurantRush/compare/Stage-1...Stage-2
 
 **What Stage 2 adds:** `VIPCustomer` and `CriticCustomer` alongside Regular customers. All customer types follow the same order and service flow. Type-specific behaviour is dispatched through overrides on `Customer` (`waitPenalty`, `computeBill`, `chooseItem`, `getType`), so the main game loop and turn controller have no type checks.
 
