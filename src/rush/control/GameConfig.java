@@ -30,11 +30,14 @@ public class GameConfig {
     }
 
     /** 18 turns, 2 tables, arrival at 1/4/7/10/13/16, win at 4 paid */
+    /** Stage 2 addition, Critic at turn 4 and VIP at turn 7 **/
     public static GameConfig baseSetting() {
         Map<Integer, CustomerType> arrivals = new TreeMap<>();
         for (int turn : new int[] {1, 4, 7, 10, 13, 16}) {
             arrivals.put(turn, CustomerType.REGULAR);
         }
+        arrivals.put(4, CustomerType.CRITIC);
+        arrivals.put(7, CustomerType.VIP);
         return new GameConfig(18, 2, 4, 4500, 60, arrivals, Menu.standard());
     }
 
