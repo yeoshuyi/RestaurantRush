@@ -1,0 +1,64 @@
+# Stage 2 victory: C2 is a Critic (always orders Pasta), C3 is a VIP (10% off).
+# The Chef is only prompted when the kitchen has an order to prepare.
+# Turn 1: C1 (Regular) arrives. Waiter seats C1 (1, 1); no Chef prompt
+1
+1
+# Turn 2: Waiter takes C1 order (2, 1): Salad $9.00; Chef preps Salad (1) -> READY
+2
+1
+1
+# Turn 3: Waiter serves C1 (3, 1); no Chef prompt
+3
+1
+# Turn 4: C2 (Critic) arrives. Waiter seats C2 (1, 1); no Chef prompt
+1
+1
+# Turn 5: Waiter takes C2 order (2, 1): Critic picks Pasta $18.00; Chef preps unit 1 (1) [C1 pays $9.00]
+2
+1
+1
+# Turn 6: Waiter waits (0); Chef preps Pasta unit 2 (1) -> READY
+0
+1
+# Turn 7: C3 (VIP) arrives. Waiter serves C2 (3, 1); no Chef prompt
+3
+1
+# Turn 8: Waiter seats C3 (1, 1); no Chef prompt
+1
+1
+# Turn 9: Waiter takes C3 order (2, 1): Pasta with VIP 10% off = $16.20; Chef preps unit 1 (1) [C2 pays $18.00]
+2
+1
+1
+# Turn 10: C4 (Regular) arrives. Waiter seats C4 (1, 1); Chef preps Pasta unit 2 (1) -> READY
+1
+1
+1
+# Turn 11: Waiter serves C3 (3, 1); no Chef prompt
+3
+1
+# Turn 12: Waiter takes C4 order (2, 1): Salad $9.00; Chef preps Salad (1) -> READY
+2
+1
+1
+# Turn 13: C5 (Regular) arrives. Waiter serves C4 (3, 1); no Chef prompt [C3 pays $16.20]
+3
+1
+# Turn 14: Waiter seats C5 (1, 1); no Chef prompt
+1
+1
+# Turn 15: Waiter takes C5 order (2, 1): Burger $15.00; Chef preps Burger (1) -> READY [C4 pays $9.00]
+2
+1
+1
+# Turn 16: C6 (Regular) arrives. Waiter serves C5 (3, 1); no Chef prompt
+3
+1
+# Turn 17: Waiter seats C6 (1, 1); no Chef prompt
+1
+1
+# Turn 18: Waiter takes C6 order (2, 1); Chef preps Pasta unit 1 (1) [C5 pays $15.00]
+# -> VICTORY: 5 paid, $67.20, average satisfaction 76.0
+2
+1
+1
