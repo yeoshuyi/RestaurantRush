@@ -15,9 +15,11 @@ public class Restaurant {
     private final WaitingQueue queue = new WaitingQueue();
     private final Menu menu;
     private final List<Customer> customers = new ArrayList<>();
+    private final Host host = new Host();
     private final Waiter waiter = new Waiter();
     private final Chef chef = new Chef();
     private final Cashier cashier = new Cashier();
+    private final HappyHour happyHour = new HappyHour();
 
     public Restaurant(int tableCount, Menu menu) {
         for (int i = 1; i <= tableCount; i++) {
@@ -27,6 +29,7 @@ public class Restaurant {
     }
 
     public void resetStaff() {
+        host.resetTurn();
         waiter.resetTurn();
         chef.resetTurn();
         cashier.resetTurn();
@@ -42,9 +45,22 @@ public class Restaurant {
         return tables.stream().filter(Table::isFree).findFirst();
     }
 
-    /** Customer-specific pricing is calculated inside Restaurant class, not in Waiter class. */
+    /**
+     * Customer-specific pricing is calculated inside Restaurant class, not in Waiter class.
+     * The customer's own discount (e.g. VIP) is applied first, then Happy Hour.
+     */
     public int quoteBill(Customer c, MenuItem item) {
-        return c.computeBill(item.getPriceCents());
+        return happyHour.applyTo(c.computeBill(item.getPriceCents()));
+    }
+
+    /** Happy Hour turn start: customers still waiting for a table or food recover. */
+    public List<Customer> applyHappyHourRecovery() {
+        if (!happyHour.isActive()) {
+            return List.of();
+        }
+        return presentCustomers().stream()
+                .filter(c -> c.recover(HappyHour.RECOVERY))
+                .collect(Collectors.toList());
     }
 
     /** Seat a queued customer at the first free table. Package-private: only staff may seat. */
@@ -137,6 +153,14 @@ public class Restaurant {
 
     public List<Customer> getCustomers() {
         return Collections.unmodifiableList(customers);
+    }
+
+    public Host getHost() {
+        return host;
+    }
+
+    public HappyHour getHappyHour() {
+        return happyHour;
     }
 
     public Waiter getWaiter() {
