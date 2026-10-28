@@ -1,60 +1,53 @@
 package rush.model;
 
+/**
+ * Happy Hour pricing policy (Stage 3). The manager may start it once per game at the
+ * start of a turn; it lasts that turn and the next. While active, orders taken get 20% off
+ * (after any customer discount) and customers still waiting recover satisfaction at turn start.
+ */
 public class HappyHour {
-    public static final int DURATION_TURNS = 2;
-    private static final int DISCOUNT_PERCENT_OF_BILL = 80; // pay 80% = 20% off
-    private static final int SATISFACTION_RECOVERY = 15;
-    private static final int MAX_SATISFACTION = 100;
- 
-    private boolean usedThisGame = false;
-    private int remainingTurns = 0;
- 
-    /** Switch Happy Hour on. Returns false if it was already used this game. */
+    public static final int DURATION = 2;
+    public static final int RECOVERY = 15;
+
+    private boolean used;
+    private int turnsLeft;
+
+    public boolean canActivate() {
+        return !used;
+    }
+
+    /** Start Happy Hour now. Returns false if it was already used this game. */
     public boolean activate() {
-        if (usedThisGame) {
+        if (used) {
             return false;
         }
-        usedThisGame = true;
-        remainingTurns = DURATION_TURNS;
+        used = true;
+        turnsLeft = DURATION;
         return true;
     }
- 
+
     public boolean isActive() {
-        return remainingTurns > 0;
+        return turnsLeft > 0;
     }
- 
-    public boolean canActivate() {
-        return !usedThisGame;
+
+    public boolean isUsed() {
+        return used;
     }
- 
-    /** For display, e.g. "Happy Hour: 2 turn(s) left". */
-    public int getRemainingTurns() {
-        return remainingTurns;
+
+    /** Active turns left, counting the current one. */
+    public int getTurnsLeft() {
+        return turnsLeft;
     }
- 
-    /** Call once at the end of every turn so the duration counts down. */
+
+    /** 20% off rounded half up to the cent while active; unchanged otherwise. */
+    public int applyTo(int cents) {
+        return isActive() ? (cents * 80 + 50) / 100 : cents;
+    }
+
+    /** Called once at the end of every turn. */
     public void endTurn() {
-        if (remainingTurns > 0) {
-            remainingTurns--;
+        if (turnsLeft > 0) {
+            turnsLeft--;
         }
-    }
- 
-    /**
-     * Price locked when the order is taken. Pass the bill AFTER the VIP discount.
-     * Returns the bill unchanged when Happy Hour is not active.
-     */
-    public int applyDiscount(int billCents) {
-        if (!isActive()) {
-            return billCents;
-        }
-        return (billCents * DISCOUNT_PERCENT_OF_BILL + 50) / 100;
-    }
- 
-    /** New satisfaction for a waiting customer at the start of an active turn (capped at 100). */
-    public int recover(int satisfaction) {
-        if (!isActive()) {
-            return satisfaction;
-        }
-        return Math.min(MAX_SATISFACTION, satisfaction + SATISFACTION_RECOVERY);
     }
 }
