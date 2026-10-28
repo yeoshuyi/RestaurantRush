@@ -60,6 +60,35 @@ public class GameController {
         });
     }
 
+    /** Stage 3: offer Happy Hour when unused */
+    /** Stage 3: apply the turn-start recovery if active. */
+    private void happyHourStart() {
+        HappyHour happyHour = restaurant.getHappyHour();
+        if (happyHour.canActivate() && view.chooseHappyHour()) {
+            happyHour.activate();
+            view.showMessage("Happy Hour starts: " + HappyHour.DURATION
+                    + " turns (this turn and next), 20% off new orders.");
+        }
+        for (Customer c : restaurant.applyHappyHourRecovery()) {
+            view.showMessage(c.getName() + " recovers to " + c.getSatisfaction() + " (Happy Hour).");
+        }
+    }
+
+    /** Stage 3: Host can seat at most one queued customer, before the waiter acts. */
+    private void hostChoice() {
+        List<Customer> waiting = restaurant.getQueue().snapshot();
+        if (waiting.isEmpty()) {
+            view.showMessage("The host has no customers to seat.");
+            return;
+        }
+        if (restaurant.freeTable().isEmpty()) {
+            view.showMessage("The host has no free table.");
+            return;
+        }
+        view.chooseHostCustomer(waiting)
+                .ifPresent(c -> showActionResult(restaurant.getHost().seat(c, restaurant)));
+    }
+
     private void waiterChoice() {
         while (restaurant.getWaiter().canAct()) {
             WaiterTask task = view.chooseWaiterTask(List.of(WaiterTask.values()));
