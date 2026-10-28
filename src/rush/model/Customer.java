@@ -49,6 +49,15 @@ public abstract class Customer {
         }
     }
 
+    /** Happy Hour recovery: only while still waiting, capped at 100. Returns true if it changed. */
+    public boolean recover(int points) {
+        if (!isWaitingForService() || satisfaction >= 100) {
+            return false;
+        }
+        satisfaction = Math.min(100, satisfaction + points);
+        return true;
+    }
+    
     public boolean hasGivenUp() {
         return satisfaction == 0;
     }
