@@ -13,6 +13,12 @@ public interface GameView {
 
     void showState(Restaurant restaurant, GameStats stats);
 
+    /** new feature Happy Hour offer at start of turn */
+    boolean chooseHappyHour();
+
+    /**for Host step: get a queued customer to seat, or empty to wait. */
+    Optional<Customer> chooseHostCustomer(List<Customer> options);
+
     WaiterTask chooseWaiterTask(List<WaiterTask> tasks);
 
     Optional<Customer> chooseCustomer(String prompt, List<Customer> options);
