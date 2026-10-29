@@ -1,0 +1,76 @@
+# Stage 3 defeat: nobody is ever seated and Happy Hour is never started.
+# Each turn: Happy Hour no (0), Host waits (0), Waiter waits (0); the Chef has no orders so no prompt.
+# C2 (Critic, -12/turn) leaves at the end of turn 12, C1 (Regular, -8/turn) at turn 13.
+# C3 (VIP, -5/turn) never leaves. Result: 0 paid, $0.00, average N/A.
+# Turn 1
+0
+0
+0
+# Turn 2
+0
+0
+0
+# Turn 3
+0
+0
+0
+# Turn 4
+0
+0
+0
+# Turn 5
+0
+0
+0
+# Turn 6
+0
+0
+0
+# Turn 7
+0
+0
+0
+# Turn 8
+0
+0
+0
+# Turn 9
+0
+0
+0
+# Turn 10
+0
+0
+0
+# Turn 11
+0
+0
+0
+# Turn 12
+0
+0
+0
+# Turn 13
+0
+0
+0
+# Turn 14
+0
+0
+0
+# Turn 15
+0
+0
+0
+# Turn 16
+0
+0
+0
+# Turn 17
+0
+0
+0
+# Turn 18
+0
+0
+0
