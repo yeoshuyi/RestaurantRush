@@ -10,6 +10,7 @@ import rush.model.CustomerType;
 import rush.model.Money;
 import rush.model.Order;
 import rush.model.Restaurant;
+import rush.model.HappyHour;
 
 public class GameController {
     private final GameConfig config;
