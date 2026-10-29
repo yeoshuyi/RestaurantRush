@@ -14,7 +14,7 @@ from typing import List
 
 from .monitor import Transcript
 
-FIELDS = ("arrivals", "snapshot", "waiter", "chef", "payments", "departures", "end", "input_errors")
+FIELDS = ("arrivals", "hh_offered", "hh_started", "recoveries", "snapshot", "host", "waiter", "chef", "payments", "departures", "end", "input_errors")
 
 
 def _ascii_fold(s: str) -> str:

@@ -22,12 +22,14 @@ LINE_PATTERNS: List[Tuple[str, re.Pattern]] = [
     ("turn_header", re.compile(r"^ TURN (\d+) / (\d+)$")),
     ("status", re.compile(r"^Revenue: (-?\$\d+\.\d\d)   Paid: (\d+)   Avg satisfaction \(paid\): (N/A|\d+\.\d)$")),
     ("queue", re.compile(r"^Waiting queue:((?: \(empty\))|(?: C\d+\[sat \d+\])*)$")),
+    ("hh_status", re.compile(r"^Happy Hour: (available|used|ACTIVE, (\d+) turns? left)$")),
+    ("hh_offer", re.compile(r"^Happy Hour \(once per game, this turn and next\): start now\?$")),
     ("tables_hdr", re.compile(r"^Tables:$")),
     ("table", re.compile(r"^  Table (\d+): (.*)$")),
     ("staff", re.compile(r"^Staff: (.*)$")),
     ("waiter_menu", re.compile(r"^Waiter tasks:$")),
     ("chooser", re.compile(r"^(Choose a customer to seat|Choose a customer to take an order from"
-                           r"|Choose an order to serve|Chef: prepare which order\?)$")),
+                           r"|Choose an order to serve|Chef: prepare which order\?|Host: seat which customer\?)$")),
     ("option", re.compile(r"^  (\d+)\) (.*)$")),
     ("msg", re.compile(r"^  > (.*)$")),
     ("err", re.compile(r"^  ! (.*)$")),
@@ -44,9 +46,11 @@ LINE_PATTERNS: List[Tuple[str, re.Pattern]] = [
     ("blank", re.compile(r"^$")),
 ]
 
+# Item names may be combos such as "Salad+Pasta" (Stage 3).
+ITEM = r"([\w+]+)"
 CUSTOMER_DESC_RE = re.compile(
-    r"^(C\d+) \((\w+)\) sat (\d+), (\w+)(?:, order #(\d+) (\w+) (\w+) (\d+)/(\d+))?$")
-ORDER_DESC = r"#(\d+) (\w+) \((\d+)/(\d+) units\) \[(\w+)\]"
+    r"^(C\d+) \((\w+)\) sat (\d+), (\w+)(?:, order #(\d+) " + ITEM + r" (\w+) (\d+)/(\d+))?$")
+ORDER_DESC = r"#(\d+) " + ITEM + r" \((\d+)/(\d+) units\) \[(\w+)\]"
 ORDER_OPTION_RE = re.compile(r"^" + ORDER_DESC + r" \[(\w+) (\d+)/(\d+)\]$")
 
 MSG_PATTERNS: List[Tuple[str, re.Pattern]] = [
@@ -63,7 +67,18 @@ MSG_PATTERNS: List[Tuple[str, re.Pattern]] = [
     ("c_prep", re.compile(r"^Chef prepares " + ORDER_DESC + r" \((\d+)/(\d+)\)(: READY)?\.$")),
     ("pay", re.compile(r"^(C\d+) pays (-?\$\d+\.\d\d)\.$")),
     ("leave", re.compile(r"^(C\d+) leaves unhappy\.$")),
+    ("hh_start", re.compile(r"^Happy Hour starts: (\d+) turns \(this turn and next\), 20% off new orders\.$")),
+    ("hh_recover", re.compile(r"^(C\d+) recovers to (\d+) \(Happy Hour\)\.$")),
+    ("h_none", re.compile(r"^The host has no customers to seat\.$")),
+    ("h_no_table", re.compile(r"^The host has no free table\.$")),
+    ("h_seat_ok", re.compile(r"^Host seats (C\d+) at table (\d+)\.$")),
 ]
+
+# Line / message kinds that only exist when a stage feature is on.
+FEATURE_OF: Dict[str, str] = {
+    "hh_status": "happy_hour", "hh_offer": "happy_hour", "hh_start": "happy_hour",
+    "hh_recover": "happy_hour", "h_none": "host", "h_no_table": "host", "h_seat_ok": "host",
+}
 
 ERR_PATTERNS: List[Tuple[str, re.Pattern]] = [
     ("no_free_table", re.compile(r"^No free table\.$")),
@@ -112,6 +127,14 @@ class Snapshot:
     queue: List[Tuple[str, int]] = field(default_factory=list)
     tables: List[TableView] = field(default_factory=list)
     staff: str = ""
+    hh: Optional[str] = None  # Happy Hour status line, Stage 3
+
+
+@dataclass
+class HostAction:
+    kind: str = ""  # no_customers | no_free_table | wait | seat
+    options: List[str] = field(default_factory=list)
+    detail: Tuple[str, ...] = ()
 
 
 @dataclass
@@ -135,6 +158,10 @@ class TurnRecord:
     max_turns: int
     arrivals: List[Tuple[str, str]] = field(default_factory=list)
     snapshot: Optional[Snapshot] = None
+    hh_offered: bool = False
+    hh_started: bool = False
+    recoveries: List[Tuple[str, int]] = field(default_factory=list)
+    host: Optional[HostAction] = None
     waiter: List[WaiterAttempt] = field(default_factory=list)
     chef: Optional[ChefAction] = None
     payments: List[Tuple[str, str]] = field(default_factory=list)
@@ -269,6 +296,11 @@ def parse(text: str) -> Transcript:
             cur.snapshot.tables.append(parse_table(int(g[0]), g[1]))
         elif k == "staff" and cur.snapshot is not None:
             cur.snapshot.staff = g[0]
+        elif k == "hh_status" and cur.snapshot is not None:
+            cur.snapshot.hh = g[0]
+        elif k == "hh_offer":
+            phase = "hh"
+            cur.hh_offered = True
         elif k == "waiter_menu":
             close_attempt_as_back()
             phase = "waiter"
@@ -278,6 +310,9 @@ def parse(text: str) -> Transcript:
             if g[0] == "Chef: prepare which order?":
                 phase = "chef"
                 cur.chef = ChefAction(kind="wait")
+            elif g[0] == "Host: seat which customer?":
+                phase = "host"
+                cur.host = HostAction(kind="wait")
             elif attempt is not None:
                 attempt.task = CHOOSER_TASK[g[0]]
         elif k == "option":
@@ -285,6 +320,8 @@ def parse(text: str) -> Transcript:
                 pass  # "0) Back" / "0) Wait" / waiter "0) Wait"
             elif phase == "chef" and cur.chef is not None:
                 cur.chef.options.append(g[1])
+            elif phase == "host" and cur.host is not None:
+                cur.host.options.append(g[1])
             elif phase == "waiter" and attempt is not None and attempt.task is not None:
                 attempt.options.append(g[1])
         elif k == "err":
@@ -300,6 +337,14 @@ def parse(text: str) -> Transcript:
             mk, mg = _classify(MSG_PATTERNS, g[0])
             if mk == "arrive":
                 cur.arrivals.append((mg[0], mg[1]))
+            elif mk == "hh_start":
+                cur.hh_started = True
+            elif mk == "hh_recover":
+                cur.recoveries.append((mg[0], int(mg[1])))
+            elif mk in ("h_none", "h_no_table"):
+                cur.host = HostAction(kind="no_customers" if mk == "h_none" else "no_free_table")
+            elif mk == "h_seat_ok" and cur.host is not None:
+                cur.host.kind, cur.host.detail = "seat", mg
             elif mk is not None and mk.startswith("w_") and attempt is not None:
                 task, outcome = {"w_wait": ("wait", "ok"), "w_seat_empty": ("seat", "empty"),
                                  "w_take_empty": ("take", "empty"), "w_serve_empty": ("serve", "empty"),

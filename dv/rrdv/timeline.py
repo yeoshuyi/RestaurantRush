@@ -32,6 +32,8 @@ class CustomerHistory:
     last_sat: int = -1
     sats: Dict[int, int] = field(default_factory=dict)  # snapshot turn -> sat
     states: Dict[int, str] = field(default_factory=dict)  # snapshot turn -> state
+    recovered_turns: List[int] = field(default_factory=list)  # Happy Hour recoveries
+    seated_by: str = ""  # Host | Waiter
 
     @property
     def sat_at_payment(self) -> Optional[int]:
@@ -50,6 +52,7 @@ class OrderHistory:
     ready_turn: int = -1
     served_turn: int = -1
     final: str = "OPEN"
+    hh: bool = False  # taken while Happy Hour was active
 
     @property
     def last_status(self) -> str:
@@ -81,7 +84,13 @@ def build(tr: Transcript) -> Timeline:
         for name, ctype in rec.arrivals:
             h = c(name)
             h.ctype, h.arrival_turn = ctype, t
+        for name, _ in rec.recoveries:
+            c(name).recovered_turns.append(t)
         snap = rec.snapshot
+        hh_active = snap is not None and snap.hh is not None and snap.hh.startswith("ACTIVE")
+        if rec.host is not None and rec.host.kind == "seat":
+            h = c(rec.host.detail[0])
+            h.seated_turn, h.table, h.last_state, h.seated_by = t, int(rec.host.detail[1]), "SEATED", "Host"
         if snap is not None:
             for name, sat in snap.queue:
                 h = c(name)
@@ -101,11 +110,11 @@ def build(tr: Transcript) -> Timeline:
                 continue
             if a.task == "seat":
                 h = c(a.detail[0])
-                h.seated_turn, h.table, h.last_state = t, int(a.detail[1]), "SEATED"
+                h.seated_turn, h.table, h.last_state, h.seated_by = t, int(a.detail[1]), "SEATED", "Waiter"
             elif a.task == "take":
                 oid, item, done, total, status, bill, units = a.detail
                 cname = _owner(rec, int(oid), cust, owners)
-                o = OrderHistory(int(oid), cname, item, parse_money(bill), int(units), t)
+                o = OrderHistory(int(oid), cname, item, parse_money(bill), int(units), t, hh=hh_active)
                 o.push(t, status)
                 orders[o.id] = o
                 if cname:

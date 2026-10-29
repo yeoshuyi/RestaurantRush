@@ -37,6 +37,21 @@ def most_demanding(cid: int, menu: Sequence[MenuItemSpec]) -> int:
     return best
 
 
+def combo(a: MenuItemSpec, b: MenuItemSpec) -> MenuItemSpec:
+    """ComboMeal: name "A+B", units summed, 90% of the combined price rounded half up."""
+    return MenuItemSpec(f"{a.name}+{b.name}", ((a.price_cents + b.price_cents) * 90 + 50) // 100,
+                        a.prep_units + b.prep_units)
+
+
+def hh_bill(cents: int) -> int:
+    """HappyHour.applyTo(): 20% off rounded half up, applied after the customer's own discount."""
+    return (cents * 80 + 50) // 100
+
+
+HH_DURATION = 2
+HH_RECOVERY = 15
+
+
 def vip_bill(base_cents: int) -> int:
     """VIPCustomer.computeBill(): 90% rounded half up to the nearest cent."""
     return (base_cents * 90 + 50) // 100
@@ -84,6 +99,9 @@ class StageSpec:
     main_class: str = "rush.Main"
     features: Tuple[str, ...] = field(default_factory=tuple)
 
+    def has(self, feature: str) -> bool:
+        return feature in self.features
+
     def kind_for(self, turn: int) -> CustomerKind:
         return CUSTOMER_KINDS[self.arrivals[turn]]
 
@@ -95,8 +113,9 @@ class StageSpec:
 
     @property
     def last_payable_arrival(self) -> int:
-        # Fastest path: seat(t) take(t+1) [chef same turn] serve(t+2) eat(t+3) pay(t+4)
-        return self.max_turns - 4
+        # Fastest path: seat(t) take(t+1) [chef same turn] serve(t+2) eat(t+3) pay(t+4).
+        # Stage 3: the Host seats before the Waiter takes the order in the same turn.
+        return self.max_turns - (3 if self.has("host") else 4)
 
 
 STANDARD_MENU = (
@@ -130,7 +149,23 @@ STAGE2 = StageSpec(
     features=("regular", "waiter", "chef", "cashier", "vip", "critic"),
 )
 
-STAGES: Dict[int, StageSpec] = {1: STAGE1, 2: STAGE2}
+_S, _B, _P = STANDARD_MENU
+STAGE3_MENU = STANDARD_MENU + (combo(_S, _B), combo(_S, _P), combo(_B, _P))
+
+# Stage 3: Host, the three pair combos and Happy Hour; arrivals as in Stage 2.
+STAGE3 = StageSpec(
+    stage=3,
+    max_turns=18,
+    tables=2,
+    arrivals=dict(STAGE2.arrivals),
+    menu=STAGE3_MENU,
+    target_paid=4,
+    target_revenue_cents=4500,
+    target_avg_satisfaction=60,
+    features=STAGE2.features + ("host", "combo", "happy_hour"),
+)
+
+STAGES: Dict[int, StageSpec] = {1: STAGE1, 2: STAGE2, 3: STAGE3}
 
 
 def get_stage(n: int) -> StageSpec:

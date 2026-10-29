@@ -45,6 +45,12 @@ class Customer:
         if self.is_waiting_for_service():
             self.satisfaction = max(0, self.satisfaction - self.kind.wait_penalty)
 
+    def recover(self, points: int) -> bool:
+        if not self.is_waiting_for_service() or self.satisfaction >= 100:
+            return False
+        self.satisfaction = min(100, self.satisfaction + points)
+        return True
+
     def finish_eating(self, turn: int) -> bool:
         if self.state == SERVED and self.served_turn < turn:
             self.state = READY_TO_PAY

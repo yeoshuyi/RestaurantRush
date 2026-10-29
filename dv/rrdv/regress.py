@@ -47,7 +47,10 @@ def check(spec: StageSpec, stim: Stimulus, run: RunResult, strict: bool = True) 
     if stim.expect and (act_tr.result is None or act_tr.result.outcome != stim.expect):
         errors.append(f"DIRECTED expected {stim.expect}, got {act_tr.result.outcome if act_tr.result else None}")
     if stim.expect_fn is not None:
-        errors += [f"DIRECTED {m}" for m in stim.expect_fn(act_tr)]
+        try:
+            errors += [f"DIRECTED {m}" for m in stim.expect_fn(act_tr)]
+        except Exception as e:  # a broken DUT can break a check's assumptions; report, don't crash
+            errors.append(f"DIRECTED check raised {type(e).__name__}: {e}")
     db, samplers = build_db(spec)
     sample_all(samplers, SampleCtx(spec, act_tr, tl, stim, exp.eof))
     errors += db.violations
