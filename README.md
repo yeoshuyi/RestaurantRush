@@ -3,9 +3,8 @@
 A turn-based command-line restaurant simulation game built in Java following the Model-View-Controller (MVC) architecture.
 
 * **Repository:** [https://github.com/yeoshuyi/RestaurantRush](https://github.com/yeoshuyi/RestaurantRush)
-* **Release:** Stage 2 (`stage-2`)
+* **Release:** Stage 3 (`stage-3`)
 
-> Stage 2 WIP
 
 ---
 
@@ -22,11 +21,15 @@ RestaurantRush/
 │       ├── Main.java   # Application entry point
 │       ├── ui/         # Console input, display formatting, and view bridge
 │       ├── control/    # Game controller, turn loop, config, and statistics
-│       └── model/      # Core entities (Restaurant, Customer, Staff, Order, Table)
+│       └── model/      # Core entities (Restaurant, Customer, Staff, Order, Table,
+│                       #   Host, ComboMeal, HappyHour)
 ├── tests/
-│   └── stage1/
-│       ├── victory.txt # script verifying victory condition
+│   ├── stage1/         # victory.txt, defeat.txt
+│   ├── stage2/         # victory.txt, defeat.txt
+│   └── stage3/
+│       ├── victory.txt # script verifying victory condition (Host, combos, Happy Hour)
 │       └── defeat.txt  # script verifying defeat condition
+├── dv/                 # Python constrained-random verification environment
 └── docs/               # System architecture and UML design diagrams
 ```
 
@@ -70,11 +73,11 @@ Run the compiled application with an input script piped into standard input:
 
 * **Victory Scenario:**
 ```bash
-java -cp bin rush.Main < tests/stage1/victory.txt
+java -cp bin rush.Main < tests/stage3/victory.txt
 ```
 * **Defeat Scenario:**
 ```bash
-java -cp bin rush.Main < tests/stage1/defeat.txt
+java -cp bin rush.Main < tests/stage3/defeat.txt
 ```
 ### Functional Coverage Verification with Constrained-Random Vectors
 
@@ -132,7 +135,58 @@ The Critic always orders the most demanding dish on the menu, meaning the dish w
 - Defeat: `java -cp bin rush.Main < tests/stage2/defeat.txt`
 
 ### Stage 2 → Stage 3
-(To be completed.)
+**Compare link:** https://github.com/yeoshuyi/RestaurantRush/compare/Stage-2...Stage-3
+
+**What Stage 3 adds:** a `Host` staff role, `ComboMeal` menu items and a `HappyHour` pricing policy. A combo is an ordinary `MenuItem` subclass, so `Order`, `Chef` and `Waiter` are unchanged. `Menu.java` is also unchanged. The Host and Happy Hour are two new manager decisions added to the turn loop through `GameView`.
+
+| Feature | Rule |
+| --- | --- |
+| Host | Seats at most one queued customer per turn, before the Waiter acts, in addition to the Waiter's task. The Waiter can still seat customers. |
+| ComboMeal | Preparation units are the sum of both components. Price is 90% of the combined price, half-up rounding to the nearest cent. |
+| Happy Hour | Manager starts it once per game at the start of a turn. It lasts that turn and the next, and the remaining duration is shown. Orders taken while active get 20% off, applied after the VIP discount, and the price is locked when the order is taken. At the start of each active turn, customers still waiting for a table or food recover 15 satisfaction (max 100). |
+
+The Stage 3 base-setting menu has six items:
+
+| Item | Price | Units |
+| --- | --- | --- |
+| Salad | $9.00 | 1 |
+| Burger | $15.00 | 1 |
+| Pasta | $18.00 | 2 |
+| Salad+Burger | $21.60 | 2 |
+| Salad+Pasta | $24.30 | 3 |
+| Burger+Pasta | $29.70 | 3 |
+
+**New files**
+| File | Purpose |
+| --- | --- |
+| `src/rush/model/ComboMeal.java` | `MenuItem` subclass of two items: summed prep units, 90% price rounded half up |
+| `src/rush/model/HappyHour.java` | Once-per-game 2-turn pricing policy: 20% discount, 15-point recovery, `endTurn()` countdown |
+| `src/rush/model/Host.java` | `Staff` subclass that seats one queued customer per turn |
+| `tests/stage3/victory.txt` | Reproducible Stage 3 victory run |
+| `tests/stage3/defeat.txt` | Reproducible Stage 3 defeat run |
+| *(Shu Yi: list the new dv files, e.g. covergroups and tests for stage 3)* | Stage 3 additions to the optional DV environment |
+
+**Existing files changed**
+| File | Change | Reason |
+| --- | --- | --- |
+| `src/rush/model/Customer.java` | Added `recover(int points)` | Happy Hour recovery. Raises satisfaction only while the customer is waiting, capped at 100, so the state check stays inside the entity |
+| `src/rush/model/Restaurant.java` | Added `Host` and `HappyHour` fields and getters. `resetStaff()` now resets the Host. `quoteBill()` applies Happy Hour after the customer's own discount. Added `applyHappyHourRecovery()` | Restaurant already owns staff and pricing, so the VIP-then-Happy-Hour order is decided in one place and the price is locked when the order is taken |
+| `src/rush/control/GameConfig.java` | `baseSetting()` builds the six-item menu with the three combos instead of `Menu.standard()` | Makes combos playable with no change to Order, Chef or Waiter |
+| `src/rush/control/GameView.java` | Added `chooseHappyHour()` and `chooseHostCustomer(List<Customer>)` | Two new manager decisions. The controller depends on the interface, not on the console |
+| `src/rush/control/GameController.java` | Added `happyHourStart()` and `hostChoice()` to the turn loop, and `HappyHour.endTurn()` at the end of each turn | Wires the new decisions into the turn sequence |
+| `src/rush/ui/ConsoleUI.java` | Implements the two new `GameView` methods. The state display shows Happy Hour status and the Host in the staff line | Console input and display for the new features |
+| `.github/workflows/ci.yml` | *(only if changed in Stage 3)* | Verifies the Stage 3 behaviour automatically |
+| `dv/` files | *(Shu Yi: list changed files)* Updated for Host, combos and Happy Hour | Keeps the optional DV environment in sync with the game rules (extra, not for grading) |
+| `README.md` | Added this Stage 3 documentation | Records the stage comparison and combo choice rule |
+
+**Files deleted:** None.
+
+### Combo choice rule
+Customer N orders menu item `(N - 1) mod menu size`, as in earlier stages. With the six-item menu this gives C1 Salad, C3 (VIP) Pasta, C4 Salad+Burger, C5 Salad+Pasta and C6 Burger+Pasta. The Critic still orders the most demanding dish, so with combos on the menu it now orders Burger+Pasta (3 units, $29.70, winning the tie with Salad+Pasta on price). `CriticCustomer.java` is not changed. Adding or reordering menu items changes which item each customer picks.
+
+### Stage 3 reproducible runs
+- Victory: `java -cp bin rush.Main < tests/stage3/victory.txt`. Result: 5 paid, $95.94, average satisfaction 84.6. Happy Hour is started on turn 13.
+- Defeat: `java -cp bin rush.Main < tests/stage3/defeat.txt`. Nobody is seated and Happy Hour is never started. Result: 0 paid, $0.00, average N/A. The Critic leaves at turn 12 and the first Regular at turn 13.
 
 ## 5. Video Timestamps
-(To be completed after recordi
+(To be completed after recording)
