@@ -12,6 +12,7 @@ import rush.control.GameStats;
 import rush.control.GameView;
 import rush.control.WaiterTask;
 import rush.model.Customer;
+import rush.model.HappyHour;
 import rush.model.Money;
 import rush.model.Order;
 import rush.model.Restaurant;
@@ -44,6 +45,7 @@ public class ConsoleUI implements GameView {
         out.println("Revenue: " + Money.format(stats.getRevenueCents())
                 + "   Paid: " + stats.getPaidCount()
                 + "   Avg satisfaction (paid): " + formatAverage(stats.averageSatisfaction()));
+        out.println("Happy Hour: " + describe(r.getHappyHour()));
         List<Customer> queued = r.getQueue().snapshot();
         out.print("Waiting queue:");
         if (queued.isEmpty()) {
@@ -58,10 +60,30 @@ public class ConsoleUI implements GameView {
             out.println("  Table " + t.getId() + ": "
                     + (t.isFree() ? "free" : describe(t.getOccupant())));
         }
-        out.println("Staff: Waiter " + available(r.getWaiter().canAct(), "1 task")
+        out.println("Staff: Host " + available(r.getHost().canAct(), "1 seat")
+                + " | Waiter " + available(r.getWaiter().canAct(), "1 task")
                 + " | Chef " + available(r.getChef().canAct(), "1 prep unit")
                 + " | Cashier automatic, 1 payment");
         out.println(THIN);
+    }
+
+    @Override
+    public boolean chooseHappyHour() {
+        out.println("Happy Hour (once per game, this turn and next): start now?");
+        out.println("  0) Not now");
+        out.println("  1) Start Happy Hour");
+        return input.readInt("Choose Happy Hour", 0, 1) == 1;
+    }
+
+    @Override
+    public Optional<Customer> chooseHostCustomer(List<Customer> options) {
+        out.println("Host: seat which customer?");
+        out.println("  0) Wait");
+        for (int i = 0; i < options.size(); i++) {
+            out.println("  " + (i + 1) + ") " + describe(options.get(i)));
+        }
+        int choice = input.readInt("Choose Host task", 0, options.size());
+        return choice == 0 ? Optional.empty() : Optional.of(options.get(choice - 1));
     }
 
     @Override
@@ -166,6 +188,13 @@ public class ConsoleUI implements GameView {
 
     private static String progress(Order o) {
         return o.getUnitsDone() + "/" + o.getItem().getPrepUnits();
+    }
+
+    private static String describe(HappyHour h) {
+        if (h.isActive()) {
+            return "ACTIVE, " + h.getTurnsLeft() + " turn" + (h.getTurnsLeft() == 1 ? "" : "s") + " left";
+        }
+        return h.isUsed() ? "used" : "available";
     }
 
     private static String available(boolean canAct, String what) {
