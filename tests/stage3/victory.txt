@@ -1,0 +1,87 @@
+# Stage 3 victory: Host, combos and Happy Hour.
+# Prompt order each turn: Happy Hour (until used), Host (when someone is queued and a table
+# is free), Waiter task (+ choice), Chef (only when the kitchen has an order).
+# Menu adds Salad+Burger $21.60 (2u), Salad+Pasta $24.30 (3u), Burger+Pasta $29.70 (3u).
+# Turn 1: C1 (Regular) arrives. HH no (0); Host seats C1 (1); Waiter takes C1 order (2, 1): Salad $9.00; Chef (1) -> READY
+0
+1
+2
+1
+1
+# Turn 2: HH no (0); Waiter serves C1 (3, 1); no Chef prompt
+0
+3
+1
+# Turn 3: HH no (0); Waiter waits (0)
+0
+0
+# Turn 4: C2 (Critic) arrives. HH no (0); Host seats C2 (1); Waiter takes C2 order (2, 1):
+#   Critic picks the most demanding dish, Burger+Pasta $29.70, 3 units; Chef unit 1 (1) [C1 pays $9.00 at 92]
+0
+1
+2
+1
+1
+# Turn 5: HH no (0); Waiter waits (0); Chef unit 2 (1)
+0
+0
+1
+# Turn 6: HH no (0); Waiter waits (0); Chef unit 3 (1) -> READY
+0
+0
+1
+# Turn 7: C3 (VIP) arrives. HH no (0); Host seats C3 (1); Waiter serves C2 (3, 1); no Chef prompt
+0
+1
+3
+1
+# Turn 8: HH no (0); Waiter takes C3 order (2, 1): Pasta with VIP 10% off = $16.20; Chef unit 1 (1)
+0
+2
+1
+1
+# Turn 9: HH no (0); Waiter waits (0); Chef unit 2 (1) -> READY [C2 pays $29.70 at 64]
+0
+0
+1
+# Turn 10: C4 (Regular) arrives. HH no (0); Host seats C4 (1); Waiter serves C3 (3, 1); no Chef prompt
+0
+1
+3
+1
+# Turn 11: HH no (0); Waiter takes C4 order (2, 1): Salad+Burger $21.60; Chef unit 1 (1)
+0
+2
+1
+1
+# Turn 12: HH no (0); Waiter waits (0); Chef unit 2 (1) -> READY [C3 pays $16.20 at 85]
+0
+0
+1
+# Turn 13: C5 (Regular) arrives. Start Happy Hour (1): C4 recovers to 91. Host seats C5 (1);
+#   Waiter takes C5 order (2, 1): Salad+Pasta $24.30 - 20% = $19.44; Chef unit 1 (1)
+1
+1
+2
+1
+1
+# Turn 14: Happy Hour, last turn (no prompt): C4 recovers to 98, C5 to 100.
+#   Waiter serves C4 (3, 1) at 98; Chef unit 2 (1)
+3
+1
+1
+# Turn 15: Waiter waits (0); Chef unit 3 (1) -> READY
+0
+1
+# Turn 16: C6 (Regular) arrives; the Host has no free table. Waiter serves C5 (3, 1) at 84 [C4 pays $21.60 at 98]
+3
+1
+# Turn 17: Host seats C6 (1); Waiter takes C6 order (2, 1): Burger+Pasta $29.70; Chef unit 1 (1)
+1
+2
+1
+1
+# Turn 18: Waiter waits (0); Chef unit 2 (1) [C5 pays $19.44 at 84]
+# -> VICTORY: 5 paid, $95.94, average satisfaction 84.6
+0
+1
