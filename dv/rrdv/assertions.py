@@ -13,9 +13,9 @@ from typing import Callable, Dict, List, Optional
 
 from .driver import RunResult
 from .javaparse import format_average, format_money, parse_money
-from .model.game import EOF_ERROR
+from .model.game import EOF_ERROR, staff_line
 from .monitor import Transcript, TurnRecord
-from .spec import CUSTOMER_KINDS, StageSpec
+from .spec import CUSTOMER_KINDS, HH_DURATION, HH_RECOVERY, StageSpec, hh_bill
 from .timeline import Timeline
 
 WAITING_STATES = ("WAITING", "SEATED", "ORDERED")
@@ -72,6 +72,17 @@ def _kind_by_label(label: str):
 
 def _cid(name: str) -> int:
     return int(name[1:])
+
+
+def _hh_active(t: TurnRecord) -> bool:
+    return t.snapshot is not None and (t.snapshot.hh or "").startswith("ACTIVE")
+
+
+def _host_seat(t: TurnRecord):
+    """(customer, table) the Host seated this turn, or None."""
+    if t.host is not None and t.host.kind == "seat":
+        return t.host.detail[0], int(t.host.detail[1])
+    return None
 
 
 # ------------------------------------------------------------------ process / format
@@ -140,8 +151,12 @@ def a_turn_struct(ctx: Ctx) -> List[str]:
             e.append(f"turn {t.turn}: waiter was not offered a task")
         if t.chef is None:
             e.append(f"turn {t.turn}: no chef step")
-        if s.staff != "Waiter (1 task available) | Chef (1 prep unit available) | Cashier automatic, 1 payment":
+        if "Staff: " + s.staff != staff_line(ctx.spec):
             e.append(f"turn {t.turn}: staff availability line {s.staff!r}")
+        if (s.hh is not None) != ctx.spec.has("happy_hour"):
+            e.append(f"turn {t.turn}: Happy Hour line {s.hh!r} (feature on: {ctx.spec.has('happy_hour')})")
+        if (t.host is not None) != ctx.spec.has("host"):
+            e.append(f"turn {t.turn}: Host step {t.host} (feature on: {ctx.spec.has('host')})")
         if int(t.end[0]) != t.turn or int(t.end[5]) != t.turn or int(t.end[6]) != ctx.spec.max_turns:
             e.append(f"turn {t.turn}: end-of-turn turn/turns-used mismatch {t.end}")
     return e
@@ -223,6 +238,11 @@ def a_waiter_legal(ctx: Ctx) -> List[str]:
         queued = [n for n, _ in s.queue]
         seated = [tv.customer for tv in s.tables if tv.state == "SEATED"]
         ready = [tv.order_id for tv in s.tables if tv.order_status == "READY"]
+        hs = _host_seat(t)
+        if hs:  # the Host acts before the Waiter (Stage 3)
+            queued = [n for n in queued if n != hs[0]]
+            free = [i for i in free if i != hs[1]]
+            seated = seated + [hs[0]]
         for a in t.waiter:
             if a.task == "seat":
                 if a.outcome == "empty" and queued:
@@ -272,9 +292,82 @@ def a_order_choice(ctx: Ctx) -> List[str]:
         if o.customer:
             h = ctx.tl.customers[o.customer]
             kind = _kind_by_label(h.ctype) or ctx.spec.kind_for(h.arrival_turn)
-            if o.bill_cents != kind.bill(item.price_cents):
-                e.append(f"order #{o.id}: bill {format_money(o.bill_cents)} != "
-                         f"{format_money(kind.bill(item.price_cents))}")
+            want = kind.bill(item.price_cents)
+            if o.hh:  # Happy Hour after the customer's own discount (4.3)
+                want = hh_bill(want)
+            if o.bill_cents != want:
+                e.append(f"order #{o.id}: bill {format_money(o.bill_cents)} != {format_money(want)}"
+                         f"{' (Happy Hour)' if o.hh else ''}")
+    return e
+
+
+# ------------------------------------------------------------------ host / happy hour (Stage 3)
+
+
+@assertion("A_HOST", "4.3 Host seats at most one queued customer per turn, besides the Waiter")
+def a_host(ctx: Ctx) -> List[str]:
+    e: List[str] = []
+    if not ctx.spec.has("host"):
+        return e
+    for t in _complete_turns(ctx):
+        s, h = t.snapshot, t.host
+        if s is None or h is None:
+            continue
+        queued = [n for n, _ in s.queue]
+        free = [tv.id for tv in s.tables if tv.customer is None]
+        if h.kind == "no_customers" and queued:
+            e.append(f"turn {t.turn}: host says nobody to seat but queue {queued}")
+        if h.kind == "no_free_table" and (free or not queued):
+            e.append(f"turn {t.turn}: host says no free table but free {free}, queue {queued}")
+        if h.kind in ("wait", "seat"):
+            if not queued or not free:
+                e.append(f"turn {t.turn}: host prompted with queue {queued}, free {free}")
+            if [o.split(" ")[0] for o in h.options] != queued:
+                e.append(f"turn {t.turn}: host options {h.options} != queue {queued}")
+        if h.kind == "seat":
+            name, tid = h.detail[0], int(h.detail[1])
+            if name not in queued:
+                e.append(f"turn {t.turn}: host seated {name} who was not queued")
+            if not free or tid != free[0]:
+                e.append(f"turn {t.turn}: host used table {tid}, first free {free[:1]}")
+    return e
+
+
+@assertion("A_HAPPY_HOUR", "4.3 Happy Hour: once per game, this turn and next, +15 to waiting, 20% off")
+def a_happy_hour(ctx: Ctx) -> List[str]:
+    e: List[str] = []
+    if not ctx.spec.has("happy_hour"):
+        return e
+    start = None
+    prev: Dict[str, tuple] = {}
+    for t in ctx.tr.turns:
+        if t.snapshot is None:
+            continue
+        if t.hh_offered == (start is not None):
+            e.append(f"turn {t.turn}: offered={t.hh_offered} but started on {start}")
+        if t.hh_started:
+            if start is not None:
+                e.append(f"turn {t.turn}: Happy Hour started twice")
+            start = t.turn
+        left = start + HH_DURATION - t.turn if start is not None else 0
+        want = (f"ACTIVE, {left} turn{'' if left == 1 else 's'} left" if left > 0
+                else "used" if start is not None else "available")
+        if t.snapshot.hh != want:
+            e.append(f"turn {t.turn}: Happy Hour shows {t.snapshot.hh!r}, expected {want!r}")
+        # Who recovers: waiting customers below 100 after last turn's loss.
+        cur: Dict[str, tuple] = {n: (sat, "WAITING") for n, sat in t.snapshot.queue}
+        cur.update({tv.customer: (tv.sat, tv.state) for tv in t.snapshot.tables if tv.customer})
+        exp = []
+        if left > 0:
+            for n, (sat, state) in cur.items():
+                if n in prev and state in WAITING_STATES:
+                    h = ctx.tl.customers.get(n)
+                    kind = _kind_by_label(h.ctype if h else "")
+                    if kind and max(0, prev[n][0] - kind.wait_penalty) < 100:
+                        exp.append((n, sat))
+        if sorted(t.recoveries) != sorted(exp):
+            e.append(f"turn {t.turn}: recoveries {t.recoveries} expected {exp}")
+        prev = cur
     return e
 
 
@@ -393,6 +486,8 @@ def a_sat_decay(ctx: Ctx) -> List[str]:
             h = ctx.tl.customers.get(name)
             kind = _kind_by_label(h.ctype if h else "") or ctx.spec.kind_for(h.arrival_turn)
             want = max(0, psat - kind.wait_penalty) if state in WAITING_STATES else psat
+            if _hh_active(t) and state in WAITING_STATES:
+                want = min(100, want + HH_RECOVERY)  # Happy Hour turn-start recovery
             if sat != want:
                 e.append(f"turn {t.turn}: {name} ({state}) sat {psat}->{sat}, expected {want}")
             if sat <= 0:

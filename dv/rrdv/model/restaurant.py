@@ -26,6 +26,9 @@ class Restaurant:
         self.queue: List[Customer] = []
         self.customers: List[Customer] = []
         self.next_order_id = 1
+        # Happy Hour (Stage 3)
+        self.hh_used = False
+        self.hh_left = 0
 
     def admit(self, c: Customer) -> None:
         self.customers.append(c)
@@ -60,6 +63,14 @@ class Restaurant:
 
     def kitchen_orders(self) -> List[Order]:
         return [o for o in self.orders() if o.is_in_kitchen()]
+
+    def hh_active(self) -> bool:
+        return self.hh_left > 0
+
+    def hh_display(self) -> str:
+        if self.hh_left > 0:
+            return f"ACTIVE, {self.hh_left} turn{'' if self.hh_left == 1 else 's'} left"
+        return "used" if self.hh_used else "available"
 
     def present_customers(self) -> List[Customer]:
         return [c for c in self.customers if c.is_present()]

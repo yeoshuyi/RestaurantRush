@@ -12,18 +12,33 @@ Facts used repeatedly:
     customer becomes READY_TO_PAY per turn and the Cashier never builds a queue.
   * The Waiter acts before the Chef, so a dish finished this turn is never in the
     serve list ("only became ready this turn" can't be printed).
+  * Stage 3: the Host lets a customer be seated and order on the arrival turn (one turn faster),
+    Happy Hour delays departures and discounts bills, and nobody orders a plain Burger.
+    Customers who recovered during Happy Hour are binned in stage3.py instead.
 """
 
 from __future__ import annotations
 
 from .. import facts
 from ..javaparse import format_money
-from ..monitor import LINE_PATTERNS, MSG_PATTERNS
+from ..monitor import FEATURE_OF, LINE_PATTERNS, MSG_PATTERNS
 from ..spec import CUSTOMER_KINDS
 from ..stimulus import JUNK_CLASSES, VALID_VARIANTS
 from . import SampleCtx, covergroup
 
 PROMPT_LABELS = ("Choose Waiter task", "Choose customer", "Choose order", "Choose Chef task")
+STAGE3_PROMPTS = {"Choose Host task": "host", "Choose Happy Hour": "happy_hour"}
+
+
+def _prompt_labels(spec):
+    return list(PROMPT_LABELS) + [p for p, f in STAGE3_PROMPTS.items() if spec.has(f)]
+
+
+def _feature_split(spec, kinds):
+    """Bins for kinds the stage has; ignore (with reason) for kinds of features it lacks."""
+    bins = [k for k in kinds if FEATURE_OF.get(k) is None or spec.has(FEATURE_OF[k])]
+    ignore = {k: f"needs feature {FEATURE_OF[k]}" for k in kinds if k not in bins}
+    return bins, ignore
 ONE_WAITER = "single Waiter serves one customer per turn, so READY_TO_PAY never overlaps"
 
 
@@ -137,10 +152,16 @@ def waiter(db, spec):
 def chef(db, spec):
     g = db.group("cg_chef", "Chef preparation choices")
     acts = ["no_orders", "wait"]
+    never = {}
+    ordered = facts.ordered_items(spec)
     for item in spec.menu:
         for u in range(1, item.prep_units + 1):
-            acts.append(f"prep_{item.name}_{u}of{item.prep_units}")
-    cp = g.coverpoint("action", acts, illegal={"error": "chef only offered kitchen orders"})
+            key = f"prep_{item.name}_{u}of{item.prep_units}"
+            if item.name in ordered:
+                acts.append(key)
+            else:
+                never[key] = f"no base-setting customer orders {item.name}"
+    cp = g.coverpoint("action", acts, ignore=never, illegal={"error": "chef only offered kitchen orders"})
     cp_same = g.coverpoint("prepared_order", ["taken_this_turn", "taken_earlier"])
     cp_depth = g.coverpoint("kitchen_depth", [str(i) for i in range(1, spec.tables + 1)])
     cp_pick = g.coverpoint("pick", ["oldest", "newer"])
@@ -171,9 +192,13 @@ def order_lifecycle(db, spec):
     ignore, illegal = {}, {}
     why = _abandon_reason(spec)
     abandoning = facts.abandoning_items(spec)
+    ordered = facts.ordered_items(spec)
     for item in spec.menu:
         illegal[(item.name, "CANCELLED_SERVED")] = "served customers lose no satisfaction"
-        if item.name not in abandoning:
+        if item.name not in ordered:
+            for f in finals:
+                ignore[(item.name, f)] = f"no base-setting customer orders {item.name}"
+        elif item.name not in abandoning:
             for f in ("CANCELLED_PLACED", "CANCELLED_IN_PREPARATION", "CANCELLED_READY"):
                 ignore[(item.name, f)] = why
         elif item.prep_units == 1:
@@ -214,8 +239,17 @@ def order_lifecycle(db, spec):
 def satisfaction(db, spec):
     g = db.group("cg_satisfaction", "satisfaction decay and abandonment")
     # Regular customers only; other kinds have their own bins in stage2.py.
-    cp_pay = g.coverpoint("sat_at_payment", ["84", "76-83", "60-75", "1-59"], ignore={
-        "85-100": "a Regular loses 8 on arrival turn and on order turn before it can be served"})
+    # Best Regular payment satisfaction: 100 - 8 x fastest unserved turns of its quickest dish.
+    regular_units = min((a.item.prep_units for a in facts.arrivals(spec) if a.kind.key == "REGULAR"),
+                        default=1)
+    best = spec.start_satisfaction - 8 * facts.fastest_unserved_turns(spec, regular_units)
+    pay_bins = ["84", "76-83", "60-75", "1-59"]
+    pay_ignore = {}
+    if best >= 85:
+        pay_bins.insert(0, "85-100")
+    else:
+        pay_ignore["85-100"] = "a Regular loses 8 on arrival turn and on order turn before it can be served"
+    cp_pay = g.coverpoint("sat_at_payment", pay_bins, ignore=pay_ignore)
     cp_from = g.coverpoint("abandon_from", ["WAITING", "SEATED", "ORDERED"],
                            illegal={"SERVED": "served customers lose nothing",
                                     "READY_TO_PAY": "served customers lose nothing"})
@@ -227,7 +261,7 @@ def satisfaction(db, spec):
 
     def sample(ctx: SampleCtx):
         for h in ctx.tl.customers.values():
-            if h.paid_turn > 0 and h.ctype == "Regular":
+            if h.paid_turn > 0 and h.ctype == "Regular" and not h.recovered_turns:
                 s = h.sats.get(h.paid_turn, -1)
                 cp_pay.sample(_bucket(s, [("1-59", 1, 59), ("60-75", 60, 75), ("76-83", 76, 83),
                                           ("84", 84, 84), ("85-100", 85, 100)]))
@@ -252,8 +286,11 @@ def eating_payment(db, spec):
     cp_lat = g.coverpoint("serve_to_pay_turns", ["2"], ignore={"3+": ONE_WAITER},
                           illegal={"0": "one full turn of eating", "1": "pay the turn after READY_TO_PAY"})
     cp_rtp = g.coverpoint("ready_to_pay_concurrency", ["1"], ignore={"2+": ONE_WAITER})
-    cp_pt = g.coverpoint("pay_turn", ["5-9", "10-14", "15-18"],
-                         illegal={"1-4": "seat, order, serve, eat, pay needs 5 turns"})
+    if facts.earliest_pay_turn(spec) <= 4:  # Stage 3 Host: seat + order on turn 1, pay on turn 4
+        cp_pt = g.coverpoint("pay_turn", ["1-4", "5-9", "10-14", "15-18"])
+    else:
+        cp_pt = g.coverpoint("pay_turn", ["5-9", "10-14", "15-18"],
+                             illegal={"1-4": "seat, order, serve, eat, pay needs 5 turns"})
     cp_cnt = g.coverpoint("payments_per_game", [str(i) for i in range(0, 6)])
     cp_reuse = g.coverpoint("table_reuse", ["after_payment", "after_departure"])
     cp_end = g.coverpoint("unpaid_at_end", ["SERVED", "READY_TO_PAY"])
@@ -329,9 +366,10 @@ def result(db, spec):
 @covergroup(stage=1)
 def print_verification(db, spec):
     g = db.group("cg_print", "every UI line type observed and parsed")
-    kinds = [k for k, _ in LINE_PATTERNS] + ["prompt"]
-    cp_line = g.coverpoint("line_kind", kinds, illegal={"unknown": "unparseable output"})
-    cp_msg = g.coverpoint("message_kind", [k for k, _ in MSG_PATTERNS])
+    kinds, kind_ignore = _feature_split(spec, [k for k, _ in LINE_PATTERNS] + ["prompt"])
+    cp_line = g.coverpoint("line_kind", kinds, ignore=kind_ignore, illegal={"unknown": "unparseable output"})
+    msgs, msg_ignore = _feature_split(spec, [k for k, _ in MSG_PATTERNS])
+    cp_msg = g.coverpoint("message_kind", msgs, ignore=msg_ignore)
     cp_avg = g.coverpoint("avg_display", ["N/A", "value"])
     cp_q = g.coverpoint("queue_display", ["empty", "1", "2", "3+"])
     cp_tab = g.coverpoint("table_state_display", ["free", "SEATED", "ORDERED", "SERVED", "READY_TO_PAY"],
@@ -359,6 +397,13 @@ def print_verification(db, spec):
                 cp_msg.sample("c_prep")
             if t.payments:
                 cp_msg.sample("pay")
+            if t.hh_started:
+                cp_msg.sample("hh_start")
+            if t.recoveries:
+                cp_msg.sample("hh_recover")
+            if t.host is not None and t.host.kind in ("no_customers", "no_free_table", "seat"):
+                cp_msg.sample({"no_customers": "h_none", "no_free_table": "h_no_table",
+                               "seat": "h_seat_ok"}[t.host.kind])
             if t.departures:
                 cp_msg.sample("leave")
             s = t.snapshot
@@ -379,9 +424,10 @@ def input_robustness(db, spec):
     g = db.group("cg_input", "malformed / unusual input handling")
     cp_junk = g.coverpoint("junk_class", list(JUNK_CLASSES))
     cp_var = g.coverpoint("valid_variant", list(VALID_VARIANTS))
-    cx = g.cross("dut_error_x_prompt", ["in_nan", "in_range"], list(PROMPT_LABELS))
+    labels = _prompt_labels(spec)
+    cx = g.cross("dut_error_x_prompt", ["in_nan", "in_range"], labels)
     cp_file = g.coverpoint("file_format", ["lf", "crlf", "no_final_newline", "eof"])
-    cp_eof = g.coverpoint("eof_at_prompt", list(PROMPT_LABELS))
+    cp_eof = g.coverpoint("eof_at_prompt", labels)
 
     def sample(ctx: SampleCtx):
         st = ctx.stim

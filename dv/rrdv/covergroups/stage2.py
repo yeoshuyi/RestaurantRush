@@ -8,6 +8,9 @@ Facts for the Stage 2 base setting (C2 Critic at turn 4, C3 VIP at turn 7):
   * The VIP loses 5 per turn, so it would need 20 unserved turns to leave:
     it can never abandon within 18 turns.
   * The Critic loses 12 per turn and leaves at the end of turn 12 if never served.
+Stage 3 (Host, Happy Hour) changes the fastest path and lets Happy Hour raise
+satisfaction and lower bills; Happy Hour orders and recovered customers are binned in
+stage3.py, and the rest here use facts.fastest_unserved_turns().
 """
 
 from __future__ import annotations
@@ -25,9 +28,9 @@ WAIT_STATES = ("WAITING", "SEATED", "ORDERED")
 def _reachable_fates(spec) -> Set[Tuple[str, str]]:
     out = set()
     for a in facts.arrivals(spec):
-        leave = facts.abandon_turn(spec, a)
-        if leave <= spec.max_turns:
+        if facts.abandon_turn(spec, a) <= spec.max_turns:
             out.add((a.kind.label, "LEFT"))
+        leave = facts.latest_abandon_turn(spec, a)
         if a.turn <= spec.last_payable_arrival:
             out.add((a.kind.label, "PAID"))
         # Served on the leave turn at the latest; payment needs two more turns.
@@ -109,7 +112,7 @@ def pricing(db, spec):
 
     def sample(ctx: SampleCtx):
         for o in ctx.tl.orders.values():
-            if not o.customer:
+            if not o.customer or o.hh:  # Happy Hour bills: cg_happy_hour
                 continue
             h = ctx.tl.customers[o.customer]
             price = spec.menu_by_name(o.item).price_cents
@@ -157,8 +160,9 @@ def kind_satisfaction(db, spec):
             a = arr.get(h.name)
             if a is None:
                 continue
-            if h.paid_turn > 0 and h.ctype in special:
-                best = spec.start_satisfaction - a.kind.wait_penalty * (a.item.prep_units + 1)
+            if h.paid_turn > 0 and h.ctype in special and not h.recovered_turns:
+                best = spec.start_satisfaction - a.kind.wait_penalty * \
+                    facts.fastest_unserved_turns(spec, a.item.prep_units)
                 sat = h.sats.get(h.paid_turn, -1)
                 cx_pay.sample((h.ctype, _extra_bucket((best - sat) // a.kind.wait_penalty)), h.name)
             if h.departed_turn > 0:

@@ -12,7 +12,7 @@ from .stimulus import PROFILES, Stimulus, generate
 
 
 def _common(p: argparse.ArgumentParser) -> None:
-    p.add_argument("--stage", type=int, default=2)
+    p.add_argument("--stage", type=int, default=3)
     p.add_argument("--repo", type=Path, default=None, help="repo root (default: auto-detect)")
     p.add_argument("--no-build", action="store_true", help="reuse dv/build/classes")
     p.add_argument("--timeout", type=float, default=30.0)

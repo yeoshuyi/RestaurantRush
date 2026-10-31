@@ -43,11 +43,14 @@ public class GameController {
         restaurant.resetStaff();
         view.showTurnHeader(turn, config.getMaxTurns());
         handleArrivals();
+        happyHourStart();
         view.showState(restaurant, stats);
+        hostChoice();
         waiterChoice();
         chefChoice();
         eatingAndPayment();
         waitingAndAbandonment();
+        restaurant.getHappyHour().endTurn();
         stats.recordTurnPlayed(turn);
         view.showEndOfTurn(turn, config.getMaxTurns(), stats);
     }

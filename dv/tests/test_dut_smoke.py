@@ -1,4 +1,4 @@
-"""End-to-end smoke test against the real Java DUT (currently Stage 2)."""
+"""End-to-end smoke test against the real Java DUT (currently Stage 3)."""
 
 import shutil
 import unittest
@@ -6,7 +6,7 @@ import unittest
 from tests import _path  # noqa: F401
 from rrdv.driver import JavaDUT, find_repo_root
 from rrdv.regress import run_one
-from rrdv.spec import STAGE2
+from rrdv.spec import STAGE3
 from rrdv.stimulus import generate
 
 
@@ -19,7 +19,7 @@ class DutSmokeTest(unittest.TestCase):
 
     def test_a_few_seeds(self):
         for seed, prof in [(1, "greedy"), (2, "random"), (3, "chaos"), (4, "lazy")]:
-            res = run_one(self.dut, STAGE2, generate(STAGE2, seed, prof))
+            res = run_one(self.dut, STAGE3, generate(STAGE3, seed, prof))
             self.assertTrue(res.passed, "\n".join(res.errors[:10]))
 
 

@@ -74,6 +74,8 @@ class Knobs:
     smart: float = 0.5  # probability that greedy soft constraints are applied to a decision
     back_prob: float = 0.05  # pick "0) Back" in a waiter chooser
     chef_wait_prob: float = 0.15
+    host_wait_prob: float = 0.2  # Stage 3: Host chooses "0) Wait"
+    hh_prob: float = 0.08  # Stage 3: chance per offer to start Happy Hour (random draws)
     junk_prob: float = 0.0  # per prompt
     junk_max: int = 3
     junk_weights: Dict[str, float] = field(default_factory=lambda: {k: 1.0 for k in JUNK_CLASSES})
@@ -86,18 +88,24 @@ class Knobs:
 
 
 PROFILES: Dict[str, Knobs] = {
-    "greedy": Knobs(smart=1.0, back_prob=0.0, chef_wait_prob=0.0),
+    "greedy": Knobs(smart=1.0, back_prob=0.0, chef_wait_prob=0.0, host_wait_prob=0.0),
     "mostly_greedy": Knobs(smart=0.85, back_prob=0.03, chef_wait_prob=0.05, junk_prob=0.03, variant_prob=0.05),
     "random": Knobs(smart=0.0, back_prob=0.1, chef_wait_prob=0.25, junk_prob=0.05, variant_prob=0.1,
                     crlf_prob=0.2, no_final_newline_prob=0.2),
     "lazy": Knobs(waiter_weights={"wait": 6, "seat": 1, "take": 1, "serve": 1}, smart=0.2,
-                  back_prob=0.1, chef_wait_prob=0.6),
+                  back_prob=0.1, chef_wait_prob=0.6, host_wait_prob=0.7),
     "chaos": Knobs(smart=0.2, back_prob=0.3, chef_wait_prob=0.3, junk_prob=0.4, variant_prob=0.4,
                    max_waiter_attempts=8, crlf_prob=0.5, eof_prob=0.3, no_final_newline_prob=0.3),
 }
 
 
 # --------------------------------------------------------------------------- policy
+
+
+def greedy_happy_hour(req: InputRequest) -> bool:
+    """Start Happy Hour once at least two customers are waiting and one is below 85."""
+    waiting = [c for c in req.model.r.present_customers() if c.is_waiting_for_service()]
+    return len(waiting) >= 2 and any(c.satisfaction < 85 for c in waiting)
 
 
 def greedy_task(req: InputRequest) -> str:
@@ -160,9 +168,12 @@ class Policy(InputSource):
         k = self.k
         if req.kind == "waiter_task":
             return [Candidate(i, t, k.waiter_weights.get(t, 1.0)) for i, t in enumerate(req.options)]
-        if req.kind == "chef":
+        if req.kind == "happy_hour":
+            return [Candidate(0, "not_now", 1 - k.hh_prob), Candidate(1, "start", k.hh_prob)]
+        if req.kind in ("chef", "host"):
             n = len(req.options)
-            out = [Candidate(0, "wait", k.chef_wait_prob * n / max(1e-9, 1 - k.chef_wait_prob))]
+            p = k.chef_wait_prob if req.kind == "chef" else k.host_wait_prob
+            out = [Candidate(0, "wait", p * n / max(1e-9, 1 - p))]
             out += [Candidate(i, f"opt{i}", 1.0) for i in range(1, n + 1)]
             return out
         n = len(req.options)
@@ -180,7 +191,10 @@ class Policy(InputSource):
                 cons.append(Constraint("greedy_task", lambda q, c, b=best: c.tag == b, soft=True))
             elif req.kind in ("chef", "take", "serve"):
                 cons.append(Constraint("oldest_first", lambda q, c: c.value == 1, soft=True))
-            elif req.kind == "seat":
+            elif req.kind == "happy_hour":
+                want = "start" if greedy_happy_hour(req) else "not_now"
+                cons.append(Constraint("greedy_happy_hour", lambda q, c, w=want: c.tag == w, soft=True))
+            elif req.kind in ("seat", "host"):
                 # Seat the customer with the most patience left (keeps the paid average high).
                 sats = [o.satisfaction for o in req.options]
                 best_i = sats.index(max(sats)) + 1

@@ -13,7 +13,7 @@ from typing import Any, Iterable, List, Optional, Sequence
 
 from ..javaparse import (format_average, format_money, java_parse_int,
                          java_trim, split_java_lines)
-from ..spec import StageSpec
+from ..spec import HH_DURATION, HH_RECOVERY, StageSpec, hh_bill
 from . import customer as cs
 from .customer import Customer
 from .order import Order
@@ -36,7 +36,7 @@ class InputRequest:
     """One InputReader.readInt() call, as seen by the input source."""
 
     request_id: int
-    kind: str  # waiter_task | seat | take | serve | chef
+    kind: str  # happy_hour | host | waiter_task | seat | take | serve | chef
     label: str
     lo: int
     hi: int
@@ -168,6 +168,8 @@ class GameModel:
         o = self.out
         o.println(f"Revenue: {format_money(self.revenue_cents)}   Paid: {len(self.paid_sats)}"
                   f"   Avg satisfaction (paid): {self.avg()}")
+        if self.spec.has("happy_hour"):
+            o.println("Happy Hour: " + self.r.hh_display())
         line = "Waiting queue:"
         if not self.r.queue:
             line += " (empty)"
@@ -177,7 +179,7 @@ class GameModel:
         o.println("Tables:")
         for t in self.r.tables:
             o.println(f"  Table {t.id}: " + ("free" if t.is_free() else self.describe_customer(t.occupant)))
-        o.println("Staff: Waiter (1 task available) | Chef (1 prep unit available) | Cashier automatic, 1 payment")
+        o.println(staff_line(self.spec))
         o.println(THIN)
 
     def choose_customer(self, kind: str, title: str, options: List[Customer]) -> Optional[Customer]:
@@ -221,11 +223,17 @@ class GameModel:
         o.println(f" TURN {self.turn} / {self.spec.max_turns}")
         o.println(THICK)
         self.step_arrivals()
+        if self.spec.has("happy_hour"):
+            self.step_happy_hour()
         self.show_state()
+        if self.spec.has("host"):
+            self.step_host()
         self.step_waiter()
         self.step_chef()
         self.step_eating_and_payment()
         self.step_waiting_and_abandonment()
+        if self.r.hh_left > 0:
+            self.r.hh_left -= 1
         self.turns_used = self.turn
         o.println(THIN)
         o.println(f"End of turn {self.turn}: served {self.served} | unhappy departures {self.departures}"
@@ -239,6 +247,40 @@ class GameModel:
             self.next_customer_id += 1
             self.r.admit(c)
             self.msg(f"{c.name} arrives ({kind.label}).")
+
+    def step_happy_hour(self) -> None:
+        r = self.r
+        if not r.hh_used:
+            o = self.out
+            o.println("Happy Hour (once per game, this turn and next): start now?")
+            o.println("  0) Not now")
+            o.println("  1) Start Happy Hour")
+            if self.read_int("happy_hour", "Choose Happy Hour", 0, 1, ("not_now", "start")) == 1:
+                r.hh_used, r.hh_left = True, HH_DURATION
+                self.msg(f"Happy Hour starts: {HH_DURATION} turns (this turn and next), 20% off new orders.")
+        if r.hh_active():
+            for c in r.present_customers():
+                if c.recover(HH_RECOVERY):
+                    self.msg(f"{c.name} recovers to {c.satisfaction} (Happy Hour).")
+
+    def step_host(self) -> None:
+        if not self.r.queue:
+            self.msg("The host has no customers to seat.")
+            return
+        if self.r.free_table() is None:
+            self.msg("The host has no free table.")
+            return
+        self.out.println("Host: seat which customer?")
+        self.out.println("  0) Wait")
+        options = list(self.r.queue)
+        for i, c in enumerate(options, 1):
+            self.out.println(f"  {i}) {self.describe_customer(c)}")
+        v = self.read_int("host", "Choose Host task", 0, len(options), options)
+        if v == 0:
+            return
+        c = options[v - 1]
+        t = self.r.seat(c)
+        self.msg(f"Host seats {c.name} at table {t.id}.")
 
     def step_waiter(self) -> None:
         while True:
@@ -277,7 +319,10 @@ class GameModel:
         if c is None:
             return False
         item = self.spec.menu[c.kind.choose_item(c.id, self.spec.menu)]
-        od = Order(self.r.next_order_id, c, item, c.kind.bill(item.price_cents))
+        bill = c.kind.bill(item.price_cents)
+        if self.r.hh_active():
+            bill = hh_bill(bill)
+        od = Order(self.r.next_order_id, c, item, bill)
         self.r.next_order_id += 1
         c.order = od
         c.state = cs.ORDERED
@@ -361,6 +406,11 @@ class GameModel:
         o.println(f"  Served {self.served} | unhappy departures {self.departures} | turns used "
                   f"{self.turns_used}/{s.max_turns}")
         return victory
+
+
+def staff_line(spec: StageSpec) -> str:
+    host = "Host (1 seat available) | " if spec.has("host") else ""
+    return f"Staff: {host}Waiter (1 task available) | Chef (1 prep unit available) | Cashier automatic, 1 payment"
 
 
 def run_script(spec: StageSpec, text: str) -> ModelResult:
