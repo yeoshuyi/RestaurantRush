@@ -92,6 +92,16 @@ python -m unittest discover -s dv/tests -t dv
 
 See [dv/README.md](dv/README.md) for details.
 
+### Trace Logging to Verify Call Sequence
+```bash
+java tests/TraceRunner.java <script> <logfile>
+
+# Example
+java tests/TraceRunner.java tests/stage3/victor.txt out.log
+```
+
+This creates a log file with full trace log that allows us to verify call sequences.
+
 ## 4. Stage Comparison
 
 ### Stage 1 → Stage 2 (Customer behaviour extension)
