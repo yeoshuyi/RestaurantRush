@@ -100,7 +100,17 @@ java tests/TraceRunner.java <script> <logfile>
 java tests/TraceRunner.java tests/stage3/victor.txt out.log
 ```
 
-This creates a log file with full trace log that allows us to verify call sequences.
+This creates a log file with full trace log that allows us to verify UML sequence diagram.
+
+### AST Tree Parsing to Verify Class Diagram
+```bash
+java tests/AstRunner.java <src_dir> <logfile>
+
+# Example
+java tests/AstRunner.java src out.log
+```
+
+This creates a log file with AST tree and method signatures that allows us to verify UML class diagram.
 
 ## 4. Stage Comparison
 
