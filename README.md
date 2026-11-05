@@ -24,13 +24,16 @@ RestaurantRush/
 │       └── model/      # Core entities (Restaurant, Customer, Staff, Order, Table,
 │                       #   Host, ComboMeal, HappyHour)
 ├── tests/
+│   ├── AstRunner.java  # AST Tree Parser to verify UML class diagram method signature and relations
+│   ├── TraceRunner.java    # Trace Logger to verify UML sequence diagram function call sequence
 │   ├── stage1/         # victory.txt, defeat.txt
 │   ├── stage2/         # victory.txt, defeat.txt
 │   └── stage3/
-│       ├── victory.txt # script verifying victory condition (Host, combos, Happy Hour)
-│       └── defeat.txt  # script verifying defeat condition
+│       ├── victory.txt # Script verifying victory condition (Host, combos, Happy Hour)
+│       └── defeat.txt  # Script verifying defeat condition
 ├── dv/                 # Python constrained-random verification environment
-└── docs/               # System architecture and UML design diagrams
+├── docs/               # Course instructions 
+└── uml/                # UML design diagrams 
 ```
 
 ---
@@ -142,7 +145,7 @@ This creates a log file with AST tree and method signatures that allows us to ve
 | `src/rush/control/GameConfig.java` | Base-setting arrival schedule now has a Critic on turn 4 and a VIP on turn 7 | The brief requires a reproducible base-setting run with at least one VIP and one Critic. This replaces two Regular arrivals, so there are still six arrivals |
 | `.github/workflows/ci.yml` | CI checks extended to cover Stage 2 features | Verifies the Stage 2 behaviour automatically |
 | `README.md` | Added this Stage 2 documentation | Records the stage comparison and Critic behaviour |
-| `dv/` files (`README.md`, `rrdv/__main__.py`, `assertions.py`, `covergroups/`, `model/game.py`, `sequences.py`, `spec.py`, `tests/test_dut_smoke.py`) | Updated for Stage 2 customer types | Keeps the optional DV environment in sync with the game rules (extra, not for grading) |
+| `dv/` | Updated for Stage 2 customer types | Keeps the optional DV environment in sync with the game rules (extra, not for grading) |
 
 **Files deleted:** None.
 
@@ -184,7 +187,7 @@ The Stage 3 base-setting menu has six items:
 | `src/rush/model/Host.java` | `Staff` subclass that seats one queued customer per turn |
 | `tests/stage3/victory.txt` | Reproducible Stage 3 victory run |
 | `tests/stage3/defeat.txt` | Reproducible Stage 3 defeat run |
-| *(Shu Yi: list the new dv files, e.g. covergroups and tests for stage 3)* | Stage 3 additions to the optional DV environment |
+| `dv/` | Stage 3 additions to the optional DV environment |
 
 **Existing files changed**
 | File | Change | Reason |
@@ -195,8 +198,8 @@ The Stage 3 base-setting menu has six items:
 | `src/rush/control/GameView.java` | Added `chooseHappyHour()` and `chooseHostCustomer(List<Customer>)` | Two new manager decisions. The controller depends on the interface, not on the console |
 | `src/rush/control/GameController.java` | Added `happyHourStart()` and `hostChoice()` to the turn loop, and `HappyHour.endTurn()` at the end of each turn | Wires the new decisions into the turn sequence |
 | `src/rush/ui/ConsoleUI.java` | Implements the two new `GameView` methods. The state display shows Happy Hour status and the Host in the staff line | Console input and display for the new features |
-| `.github/workflows/ci.yml` | *(only if changed in Stage 3)* | Verifies the Stage 3 behaviour automatically |
-| `dv/` files | *(Shu Yi: list changed files)* Updated for Host, combos and Happy Hour | Keeps the optional DV environment in sync with the game rules (extra, not for grading) |
+| `.github/workflows/ci.yml` | Updated to stage 3 tests | Verifies the Stage 3 behaviour automatically |
+| `dv/` | Updated for Host, combos and Happy Hour | Keeps the optional DV environment in sync with the game rules (extra, not for grading) |
 | `README.md` | Added this Stage 3 documentation | Records the stage comparison and combo choice rule |
 
 **Files deleted:** None.
