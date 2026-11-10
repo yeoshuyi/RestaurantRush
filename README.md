@@ -222,9 +222,15 @@ Customer N orders menu item `(N - 1) mod menu size`, as in earlier stages. With 
 ### UML Class Diagram Refactoring
 > https://claude.ai/share/8eeeb4f0-3983-47be-b9fa-97cd76daa2f3
 
+### Stage 1 Class Method Refactoring
+> https://claude.ai/share/67194e44-3a42-42b5-9ea6-75f335bdbc15
+
 ### Design Verification Harness Generation
 > https://claude.ai/code/cshk_01PjHsBhzyCBrgucwXzAGu9A5dXe5oCyobskmqQomrmMzA
 > https://claude.ai/share/774202db-6de3-46f8-9421-38d1ae64092a
+
+### Sequence Diagram Verification Against Victory Script
+> https://claude.ai/share/285c4544-cdd0-40d4-ab24-2942636c6ab2
 
 ### Trace Runner Generation
 > https://claude.ai/code/cshk_01BCgizi4poMyThiQNJwiVYg9h6WNRshUmtXtSVgfpomTo
