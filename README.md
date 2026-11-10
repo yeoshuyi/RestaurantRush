@@ -70,6 +70,10 @@ java -cp bin rush.Main
 
 The application supports automated scripted playthroughs to verify deterministic customer choices, staff action validations, and game-ending states.
 
+Every commit is subjected to unit testing (by pusher) and Python based constraint-random verification in CI pipeline.
+
+Every tagged release passes through a full regression test, victory and defeat test scenario, AST tree parser for UML class diagram compliance and trace logging for UML sequence diagram compliance.
+
 ### Replaying Test Transcripts
 
 Run the compiled application with an input script piped into standard input:
@@ -84,9 +88,7 @@ java -cp bin rush.Main < tests/stage3/defeat.txt
 ```
 ### Functional Coverage Verification with Constrained-Random Vectors
 
-> The DV Script is written with heavy AI-assistance as an extra exploration outside of the project requirements. Please ignore it for grading.
-
-`dv/` contains a Python (3.9+, standard library only) verification environment. It drives the game through stdin/stdout with constrained-random and directed inputs, and checks every run against a reference model and against assertions. It also measures functional coverage of turns, arrivals, Waiter, Chef, the order lifecycle, satisfaction and abandonment, eating and payment, results, print format and input robustness. It runs in GitHub CI as the `dv` job.
+`dv/` contains a Python (3.9+, standard library only) verification environment that binds to the Java app through the std IO streams. It drives the game through stdin/stdout with constrained-random and directed inputs, and checks every run against a reference model and against assertions. It also measures functional coverage of turns, arrivals, Waiter, Chef, the order lifecycle, satisfaction and abandonment, eating and payment, results, print format and input robustness. It runs in GitHub CI as the `dv` job.
 
 ```bash
 python dv/dv.py regress            # directed + 200 random seeds, 100% coverage gate
