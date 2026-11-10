@@ -1,11 +1,18 @@
 # Restaurant Rush
 
 A turn-based command-line restaurant simulation game built in Java following the Model-View-Controller (MVC) architecture.
+The code follows an **Entity–Control–Boundary** split.
 
 * **Repository:** [https://github.com/yeoshuyi/RestaurantRush](https://github.com/yeoshuyi/RestaurantRush)
 * **Release:** Stage 3 (`stage-3`)
+* 
+| Tag | Commit | Adds |
+| --- | --- | --- |
+| `Stage-1` | `cb94704` | Customers, Menu, Waiter/Chef/Cashier, full turn loop, satisfaction, abandonment, results |
+| `Stage-2` | `5e37610` | `VIPCustomer` and `CriticCustomer` |
+| `Stage-3` | `f004cb3` | `Host`, `ComboMeal`, `HappyHour` |
 
-
+> Latest Stage 3 regression: 242 tests passed (directed + 200 random seeds), **100% functional coverage (396/396 bins across 15 covergroups)**, plus 22 DV self-tests. Earlier tags are re-verified with their own bins (256 for Stage 1, 304 for Stage 2).
 ---
 
 ## 1. Directory Structure
@@ -66,7 +73,50 @@ java -cp bin rush.Main
 ```
 
 ---
-## 3. Test Verification
+
+## 3. Game Rules
+
+**Base setting:** 18 turns, 2 tables, one Host (Stage 3), Waiter, Chef and Cashier. Six customers arrive at the start of turns 1, 4, 7, 10, 13 and 16. From Stage 2, turn 4 brings a Critic and turn 7 a VIP.
+
+**Victory** (checked after turn 18; the game never ends early) requires all three:
+- at least 4 paid customers
+- revenue of at least $45.00
+- average satisfaction of paid customers of at least 60
+
+Otherwise the result is Defeat.
+
+### Turn order
+
+| Step | What happens |
+| --- | --- |
+| 1. Arrivals | A scheduled customer joins the waiting queue |
+| Happy Hour (S3) | Manager may start it (once per game); active turns give +15 recovery to waiting customers |
+| Host (S3) | Seats at most one queued customer, or waits |
+| 2–3. Waiter, then Chef | Waiter seats / takes an order / serves a READY dish / waits; then the Chef advances one order by one unit |
+| 4. Eating and payment | Cashier collects at most one payment automatically |
+| 5. Waiting and abandonment | Waiting customers lose satisfaction; at 0 they leave |
+| 6. Result | Evaluated once, after turn 18 |
+
+### Controls
+
+Enter the number next to a choice. `0` means wait, not now, or back. An invalid choice (non-numeric, out of range, serving a dish that isn't READY, seating with no free table) prints the reason and asks again. **A failed action does not use up the staff member's task.**
+
+### Rule interpretations
+
+| Topic | Our rule |
+| --- | --- |
+| Serving | A dish that becomes READY on turn *t* can only be served from turn *t+1* (the Waiter acts before the Chef) |
+| Eating | A served customer eats for one full turn, then becomes READY_TO_PAY |
+| Payment | Pays from the turn after becoming READY_TO_PAY; the Cashier picks the oldest first by (ready-to-pay turn, customer id) |
+| Satisfaction loss | Applies to customers waiting for a table or food: Regular 8, VIP 5, Critic 12 per turn (minimum 0) |
+| Abandonment | At 0 the customer leaves; any unfinished order is cancelled and the table freed |
+| Food choice | Deterministic: customer *N* orders item `(N − 1) mod menu size`; the Critic overrides this (see below) |
+| Pricing | Customer discount first, then Happy Hour; each step rounded half-up to the cent. Price is locked when the order is taken. VIP Burger in Happy Hour: $15.00 → $13.50 → **$10.80** |
+| Money | Stored as integer cents throughout; formatted only for display |
+
+---
+
+## 4. Test Verification
 
 The application supports automated scripted playthroughs to verify deterministic customer choices, staff action validations, and game-ending states.
 
@@ -117,7 +167,7 @@ java tests/AstRunner.java src out.log
 
 This creates a log file with AST tree and method signatures that allows us to verify UML class diagram.
 
-## 4. Stage Comparison
+## 5. Stage Comparison
 
 ### Stage 1 → Stage 2 (Customer behaviour extension)
 
@@ -213,10 +263,38 @@ Customer N orders menu item `(N - 1) mod menu size`, as in earlier stages. With 
 - Victory: `java -cp bin rush.Main < tests/stage3/victory.txt`. Result: 5 paid, $95.94, average satisfaction 84.6. Happy Hour is started on turn 13.
 - Defeat: `java -cp bin rush.Main < tests/stage3/defeat.txt`. Nobody is seated and Happy Hour is never started. Result: 0 paid, $0.00, average N/A. The Critic leaves at turn 12 and the first Regular at turn 13.
 
-## 5. Video Timestamps
+---
+
+## 6. Short Design Discussion
+> Full discussion attached in the final report.
+
+### SOLID Principle Implementation
+
+| Concept | Where |
+| --- | --- |
+| **Abstraction** | `Customer` and `Staff` are abstract from Stage 1, because the brief already listed the later types and roles |
+| **Encapsulation** | State-changing methods (`seatAt`, `placeOrder`, `pay`, `leave`, `Order.advance`, `Restaurant.seat`) are package-private, so control and UI can only change state through staff actions |
+| **Inheritance + Template Method** | `Staff.perform()` enforces "one task per turn; failed actions don't count" once; subclasses supply only the action. `Host` is a few lines and reuses all of it |
+| **Polymorphism** | `waitPenalty()`, `computeBill()`, `chooseItem()` are overridden per customer type; `GameController` never checks the type |
+| **Composition** | `Restaurant` creates and owns its tables, queue, staff and `HappyHour` |
+| **Liskov substitution** | `ComboMeal` *is a* `MenuItem` and *has* two `MenuItem`s; `Order`, `Chef`, `Waiter` and `Menu` handle it unchanged |
+| **Dependency inversion** | `GameController` depends on the `GameView` interface, not `ConsoleUI`; `Main` wires them together |
+
+### Trade-offs
+
+- **Central `Restaurant`:** keeps invariants such as discount order and table release in one place, at the cost of a large class (~200 lines of short queries and delegations).
+- **Subclass per customer type** rather than composed strategies: simplest polymorphism, but a "VIP Critic" would need another class.
+- **`ActionResult` instead of exceptions:** an invalid manager choice is expected input, not an exceptional event.
+- **Alternative considered:** strategy-based policies plus a `List<PricingRule>`. We rejected it because it roughly triples the class count for one promotion and moves the required discount order into configuration.
+
+---
+
+## 7. Video Timestamps
 (To be completed after recording)
 
-## 6. AI Declaration
+---
+
+## 8. AI Declaration
 
 ### Presentation Animation Generation
 > https://claude.ai/share/2b44041c-ed0b-420f-9f4c-d8c4427453ff
