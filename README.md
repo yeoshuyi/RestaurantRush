@@ -197,7 +197,7 @@ This creates a log file with AST tree and method signatures that allows us to ve
 | `src/rush/control/GameConfig.java` | Base-setting arrival schedule now has a Critic on turn 4 and a VIP on turn 7 | The brief requires a reproducible base-setting run with at least one VIP and one Critic. This replaces two Regular arrivals, so there are still six arrivals |
 | `.github/workflows/ci.yml` | CI checks extended to cover Stage 2 features | Verifies the Stage 2 behaviour automatically |
 | `README.md` | Added this Stage 2 documentation | Records the stage comparison and Critic behaviour |
-| `dv/` | Updated for Stage 2 customer types | Keeps the optional DV environment in sync with the game rules (extra, not for grading) |
+| `dv/` | Updated for Stage 2 customer types | Keeps the optional DV environment in sync with the game rules |
 
 **Files deleted:** None.
 
@@ -251,7 +251,7 @@ The Stage 3 base-setting menu has six items:
 | `src/rush/control/GameController.java` | Added `happyHourStart()` and `hostChoice()` to the turn loop, and `HappyHour.endTurn()` at the end of each turn | Wires the new decisions into the turn sequence |
 | `src/rush/ui/ConsoleUI.java` | Implements the two new `GameView` methods. The state display shows Happy Hour status and the Host in the staff line | Console input and display for the new features |
 | `.github/workflows/ci.yml` | Updated to stage 3 tests | Verifies the Stage 3 behaviour automatically |
-| `dv/` | Updated for Host, combos and Happy Hour | Keeps the optional DV environment in sync with the game rules (extra, not for grading) |
+| `dv/` | Updated for Host, combos and Happy Hour | Keeps the optional DV environment in sync with the game rules |
 | `README.md` | Added this Stage 3 documentation | Records the stage comparison and combo choice rule |
 
 **Files deleted:** None.
