@@ -213,3 +213,21 @@ Customer N orders menu item `(N - 1) mod menu size`, as in earlier stages. With 
 
 ## 5. Video Timestamps
 (To be completed after recording)
+
+## 6. AI Declaration
+
+### Presentation Animation Generation
+> https://claude.ai/share/2b44041c-ed0b-420f-9f4c-d8c4427453ff
+
+### UML Class Diagram Refactoring
+> https://claude.ai/share/8eeeb4f0-3983-47be-b9fa-97cd76daa2f3
+
+### Design Verification Harness Generation
+> https://claude.ai/code/cshk_01PjHsBhzyCBrgucwXzAGu9A5dXe5oCyobskmqQomrmMzA
+> https://claude.ai/share/774202db-6de3-46f8-9421-38d1ae64092a
+
+### Trace Runner Generation
+> https://claude.ai/code/cshk_01BCgizi4poMyThiQNJwiVYg9h6WNRshUmtXtSVgfpomTo
+
+### AST Runner Generation
+> https://claude.ai/code/session_01BCgiziBmX11D59JtrnXRwu
