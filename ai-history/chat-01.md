@@ -80,6 +80,34 @@ Would you like the code implementation details for Customer and RegularCustomer 
 
 ### My prompt
 
+"so can i commit messgae for customer.java with "full turn sequence, customer functions etc."
+
+### Gemini's Response
+
+"You should make it more specific. While "full turn sequence, customer functions etc." describes what you were thinking about, it has two issues for a git commit:
+
+Missing standard type: It does not follow your team's [type]: [desc] convention.
+
+Inaccurate scope: Customer.java does not handle the full turn sequence—the turn sequence is run by GameController / Restaurant. Customer.java only represents the individual customer and their personal state.
+Here is how to adjust that exact idea into a proper, meaningful message:
+
+Recommended Commit Messages
+Best match to your idea:
+```
+git commit -m "feat: implement Customer entity with satisfaction decay and dining lifecycle"
+```
+Focusing on the customer's state machine & rules:
+```
+git commit -m "feat: add Customer base class tracking service state, item choice, and abandonment"
+```
+Short and clean:
+```
+git commit -m "feat: implement Customer state transitions and waiting decay"
+```
+These clearly tell your teammates and graders that Customer.java is responsible for customer-level logic (satisfaction, state transitions, choosing food, and leaving) without claiming it runs the entire game loop."
+
+### My prompt
+
 "explain the item choice in Customer.java"
 
 ### Gemini's Response
