@@ -320,3 +320,6 @@ Customer N orders menu item `(N - 1) mod menu size`, as in earlier stages. With 
 
 ### Presentation Script Generation
 > https://claude.ai/share/a9328b89-8a83-4164-83a5-7ab8a3ab3842
+
+### Presentation Slide Generation 
+> https://claude.ai/share/4de94102-6cdc-4327-9875-e1ed0ee0839b
