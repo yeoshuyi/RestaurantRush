@@ -4,13 +4,13 @@ A turn-based command-line restaurant simulation game built in Java following the
 The code follows an **Entity–Control–Boundary** split.
 
 * **Repository:** [https://github.com/yeoshuyi/RestaurantRush](https://github.com/yeoshuyi/RestaurantRush)
-* **Release:** Stage 3 (`stage-3`)
+* **Release:** Stage 3 (`Stage-3`)
   
 | Tag | Commit | Adds |
 | --- | --- | --- |
-| `stage-1` | `cb94704` | Customers, Menu, Waiter/Chef/Cashier, full turn loop, satisfaction, abandonment, results |
-| `stage-2` | `5e37610` | `VIPCustomer` and `CriticCustomer` |
-| `stage-3` | `f004cb3` | `Host`, `ComboMeal`, `HappyHour` |
+| `Stage-1` | `cb94704` | Customers, Menu, Waiter/Chef/Cashier, full turn loop, satisfaction, abandonment, results |
+| `Stage-2` | `5e37610` | `VIPCustomer` and `CriticCustomer` |
+| `Stage-3` | `f004cb3` | `Host`, `ComboMeal`, `HappyHour` |
 
 > Latest Stage 3 regression: 242 tests passed (directed + 200 random seeds), **100% functional coverage (396/396 bins across 15 covergroups)**, plus 22 DV self-tests. Earlier tags are re-verified with their own bins (256 for Stage 1, 304 for Stage 2).
 ---
@@ -299,7 +299,7 @@ Customer N orders menu item `(N - 1) mod menu size`, as in earlier stages. With 
 | **4** | **A VIP or Critic behaviour** | `02:49` – `03:44` | **Critic (`02:56`):** `C2` arrives on Turn 4, orders the highest-prep dish (Pasta, 2 units), and loses 12 satisfaction per turn.<br>**VIP (`03:09`):** `C3` arrives on Turn 7, loses only 5 satisfaction per turn, and receives a 10% discount (`$16.20` instead of `$18.00` for Pasta). |
 | **5** | **A Stage 3 feature** | `03:57` – `05:24` | **Combo Meals (`03:58`):** `C2` orders `Burger+Pasta` (`$29.70`, 3 prep units).<br>**Happy Hour (`04:28`):** Activated once per game on Turn 13 for 2 rounds—restoring +15 satisfaction to waiting customer `C4` and locking in a 20% discount (`$19.44`) on `C5`'s `Salad+Pasta` combo.<br>**Host (`05:08`):** Automatically seats queued customers before the Waiter's turn so the Waiter can simultaneously take orders or serve. |
 | **6** | **One victory and one defeat (separate reproducible runs)** | `02:30` – `02:46`<br>`03:45` – `03:51`<br>`05:24` – `05:45` | **Stage 1:** Victory script (`02:30`) vs. Defeat script (`02:40`).<br>**Stage 2:** Victory script (`03:45`).<br>**Stage 3:** Victory script (`05:24`) vs. Defeat script (`05:30`). |
-| **7** | **The stage tag comparisons and the diagrams** | `01:33` – `01:49`<br>`05:47` – `10:45` | **Stage Tag Overview (`01:33`):** Comparison of `stage-1`, `stage-2`, and `stage-3` tagged commits.<br>**Class Diagrams (`05:47` – `07:29`):** Walkthrough of Stage 1 → Stage 2 Open-Closed extension (`06:20`) and Stage 3 additions (`06:59`).<br>**Verification & Sequence Diagram (`07:30` – `10:45`):** Automated AST/JDI verification against the diagrams (`07:54`) and Stage 3 sequence diagram walkthrough (`08:38`). |
+| **7** | **The stage tag comparisons and the diagrams** | `01:33` – `01:49`<br>`05:47` – `10:45` | **Stage Tag Overview (`01:33`):** Comparison of `Stage-1`, `Stage-2`, and `Stage-3` tagged commits.<br>**Class Diagrams (`05:47` – `07:29`):** Walkthrough of Stage 1 → Stage 2 Open-Closed extension (`06:20`) and Stage 3 additions (`06:59`).<br>**Verification & Sequence Diagram (`07:30` – `10:45`):** Automated AST/JDI verification against the diagrams (`07:54`) and Stage 3 sequence diagram walkthrough (`08:38`). |
 
 ### Full Video Outline
 * **`00:00` – `01:50`**: Project Overview, Rules, & Stage 1–3 Git Tags
