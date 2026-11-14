@@ -317,3 +317,6 @@ Customer N orders menu item `(N - 1) mod menu size`, as in earlier stages. With 
 
 ### AST Runner Generation
 > https://claude.ai/code/session_01BCgiziBmX11D59JtrnXRwu
+
+### Presentation Script Generation
+> https://claude.ai/share/a9328b89-8a83-4164-83a5-7ab8a3ab3842
