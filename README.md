@@ -5,12 +5,12 @@ The code follows an **Entity–Control–Boundary** split.
 
 * **Repository:** [https://github.com/yeoshuyi/RestaurantRush](https://github.com/yeoshuyi/RestaurantRush)
 * **Release:** Stage 3 (`stage-3`)
-* 
+  
 | Tag | Commit | Adds |
 | --- | --- | --- |
-| `Stage-1` | `cb94704` | Customers, Menu, Waiter/Chef/Cashier, full turn loop, satisfaction, abandonment, results |
-| `Stage-2` | `5e37610` | `VIPCustomer` and `CriticCustomer` |
-| `Stage-3` | `f004cb3` | `Host`, `ComboMeal`, `HappyHour` |
+| `stage-1` | `cb94704` | Customers, Menu, Waiter/Chef/Cashier, full turn loop, satisfaction, abandonment, results |
+| `stage-2` | `5e37610` | `VIPCustomer` and `CriticCustomer` |
+| `stage-3` | `f004cb3` | `Host`, `ComboMeal`, `HappyHour` |
 
 > Latest Stage 3 regression: 242 tests passed (directed + 200 random seeds), **100% functional coverage (396/396 bins across 15 covergroups)**, plus 22 DV self-tests. Earlier tags are re-verified with their own bins (256 for Stage 1, 304 for Stage 2).
 ---
@@ -152,7 +152,7 @@ See [dv/README.md](dv/README.md) for details.
 java tests/TraceRunner.java <script> <logfile>
 
 # Example
-java tests/TraceRunner.java tests/stage3/victor.txt out.log
+java tests/TraceRunner.java tests/stage3/victory.txt out.log
 ```
 
 This creates a log file with full trace log that allows us to verify UML sequence diagram.
@@ -290,8 +290,6 @@ Customer N orders menu item `(N - 1) mod menu size`, as in earlier stages. With 
 ---
 
 ## 7. Video Timestamps
-
-Here are the timestamps for the required demonstration segments in our presentation video:
 
 | # | Required Segment | Timestamp | Description |
 | :--- | :--- | :--- | :--- |
