@@ -313,30 +313,40 @@ Customer N orders menu item `(N - 1) mod menu size`, as in earlier stages. With 
 
 ## 8. AI Declaration
 
-### Presentation Animation Generation
+### Individual Member AI History Branches
+| Member | Branch | AI History Link |
+| :--- | :--- | :--- |
+| **Kayne** | `kayne-ai-history` | https://github.com/yeoshuyi/RestaurantRush/tree/kayne-ai-history/ai-history |
+| **Shuyi** | `shuyi-ai-history` | https://github.com/yeoshuyi/RestaurantRush/tree/shuyi-ai-history/ai-history |
+| **Amanda** | `amanda-ai-history` | https://github.com/yeoshuyi/RestaurantRush/tree/amanda-ai-history/ai-history |
+| **Felicia** | `felicia-ai-history` | https://github.com/yeoshuyi/RestaurantRush/tree/felicia-ai-history/ai-history |
+| **Luis** | `luis-ai-history` | https://github.com/yeoshuyi/RestaurantRush/tree/luis-ai-history/ai-history |
+
+### Direct AI Session Links
+* **Presentation Animation Generation:**
 > https://claude.ai/share/2b44041c-ed0b-420f-9f4c-d8c4427453ff
 
-### UML Class Diagram Refactoring
+* **UML Class Diagram Refactoring**
 > https://claude.ai/share/8eeeb4f0-3983-47be-b9fa-97cd76daa2f3
 
-### Stage 1 Class Method Refactoring
+* **Stage 1 Class Method Refactoring**
 > https://claude.ai/share/67194e44-3a42-42b5-9ea6-75f335bdbc15
 
-### Design Verification Harness Generation
+* **Design Verification Harness Generation**
 > https://claude.ai/code/cshk_01PjHsBhzyCBrgucwXzAGu9A5dXe5oCyobskmqQomrmMzA
 > https://claude.ai/share/774202db-6de3-46f8-9421-38d1ae64092a
 
-### Sequence Diagram Verification Against Victory Script
+* **Sequence Diagram Verification Against Victory Script**
 > https://claude.ai/share/285c4544-cdd0-40d4-ab24-2942636c6ab2
 
-### Trace Runner Generation
+* **Trace Runner Generation**
 > https://claude.ai/code/cshk_01BCgizi4poMyThiQNJwiVYg9h6WNRshUmtXtSVgfpomTo
 
-### AST Runner Generation
+* **AST Runner Generation**
 > https://claude.ai/code/session_01BCgiziBmX11D59JtrnXRwu
 
-### Presentation Script Generation
+* **Presentation Script Generation**
 > https://claude.ai/share/a9328b89-8a83-4164-83a5-7ab8a3ab3842
 
-### Presentation Slide Generation 
+* **Presentation Slide Generation** 
 > https://claude.ai/share/4de94102-6cdc-4327-9875-e1ed0ee0839b
