@@ -290,7 +290,26 @@ Customer N orders menu item `(N - 1) mod menu size`, as in earlier stages. With 
 ---
 
 ## 7. Video Timestamps
-(To be completed after recording)
+
+Here are the timestamps for the required demonstration segments in our presentation video:
+
+| # | Required Segment | Timestamp | Description |
+| :--- | :--- | :--- | :--- |
+| **1** | **The game launching from the submitted project** | `01:51` | Launching Stage 1 (`java -cp bin-stage1 rush.Main`) from the terminal in VS Code (also shown for Stage 2 at `02:47` and Stage 3 at `03:52`). |
+| **2** | **Meaningful manager choices, including a decision where staff are constrained** | `01:58` – `02:29`<br>`03:13` – `03:38` | **Stage 1 (`01:58`):** Allocating the single task per turn for the Waiter and Chef, plus demonstrating invalid action handling (`02:24`) where trying to serve an unready order displays an error without consuming the Waiter's turn.<br>**Stage 2 (`03:13`):** Prioritizing serving the impatient Critic (`C2`) before the newly arrived VIP (`C3`) on Turn 7 due to the Waiter's 1-task-per-turn constraint. |
+| **3** | **A dish going `READY` → `SERVED` → payment** | `02:19` – `02:22` | Customer `C1`'s Salad (`1/1` units) transitions from `READY` at the end of Turn 1 (`02:19`), gets `SERVED` by the Waiter on Turn 2 (`02:20`), and is automatically collected for payment (`C1 pays $9.00`) on Turn 3 (`02:21`). |
+| **4** | **A VIP or Critic behaviour** | `02:49` – `03:44` | **Critic (`02:56`):** `C2` arrives on Turn 4, orders the highest-prep dish (Pasta, 2 units), and loses 12 satisfaction per turn.<br>**VIP (`03:09`):** `C3` arrives on Turn 7, loses only 5 satisfaction per turn, and receives a 10% discount (`$16.20` instead of `$18.00` for Pasta). |
+| **5** | **A Stage 3 feature** | `03:57` – `05:24` | **Combo Meals (`03:58`):** `C2` orders `Burger+Pasta` (`$29.70`, 3 prep units).<br>**Happy Hour (`04:28`):** Activated once per game on Turn 13 for 2 rounds—restoring +15 satisfaction to waiting customer `C4` and locking in a 20% discount (`$19.44`) on `C5`'s `Salad+Pasta` combo.<br>**Host (`05:08`):** Automatically seats queued customers before the Waiter's turn so the Waiter can simultaneously take orders or serve. |
+| **6** | **One victory and one defeat (separate reproducible runs)** | `02:30` – `02:46`<br>`03:45` – `03:51`<br>`05:24` – `05:45` | **Stage 1:** Victory script (`02:30`) vs. Defeat script (`02:40`).<br>**Stage 2:** Victory script (`03:45`).<br>**Stage 3:** Victory script (`05:24`) vs. Defeat script (`05:30`). |
+| **7** | **The stage tag comparisons and the diagrams** | `01:33` – `01:49`<br>`05:47` – `10:45` | **Stage Tag Overview (`01:33`):** Comparison of `stage-1`, `stage-2`, and `stage-3` tagged commits.<br>**Class Diagrams (`05:47` – `07:29`):** Walkthrough of Stage 1 → Stage 2 Open-Closed extension (`06:20`) and Stage 3 additions (`06:59`).<br>**Verification & Sequence Diagram (`07:30` – `10:45`):** Automated AST/JDI verification against the diagrams (`07:54`) and Stage 3 sequence diagram walkthrough (`08:38`). |
+
+### Full Video Outline
+* **`00:00` – `01:50`**: Project Overview, Rules, & Stage 1–3 Git Tags
+* **`01:51` – `05:46`**: Gameplay Demonstrations (Stage 1, Stage 2, & Stage 3 Victory/Defeat Runs)
+* **`05:47` – `07:29`**: Architecture & Class Diagram Evolution (Stage 1 → 2 → 3)
+* **`07:30` – `08:37`**: Automated Design Verification (Python DV, AST Class Check, & JDI Trace Check)
+* **`08:38` – `10:45`**: Stage 3 Sequence Diagram Walkthrough
+* **`10:46` – `14:50`**: Individual Member Reflections (Amanda, Shu Yi, Felicia, Luis, & Kayne)
 
 ---
 
